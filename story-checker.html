@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Story Quality Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: two-pane editor — story form on the left, INVEST verdict and ready-to-paste output on the right */
+
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunken:#ECEEF4; --ink:#171E2C; --muted:#5A6476; --line:#D9DDE7;
+  --accent:#2B42B0; --accent-soft:#E5E8F9; --on-accent:#FFFFFF; --marker:#F2C14E; --marker-ink:#3A2A00;
+  --good:#1D7A4E; --good-soft:#E2F3E9; --warn:#946000; --warn-soft:#FAEFD7; --bad:#B3261E; --bad-soft:#FAE3E1;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+.lede{color:var(--muted);max-width:65ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.formula{font-family:var(--mono);font-size:14px;background:var(--sunken);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.formula b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--sunken);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.score{font-weight:500;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+.fallback textarea{font-family:var(--mono);font-size:12.5px;min-height:140px}
+footer{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+.cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+.side{display:grid;gap:20px;position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+@media (max-width:860px){.side{position:static}}
+.field{display:grid;gap:5px}
+.field label,.lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.story-line{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center}
+.story-line .kw{font-family:var(--display);font-weight:600;font-size:15px;white-space:nowrap}
+@media (max-width:480px){.story-line{grid-template-columns:minmax(0,1fr)}}
+textarea{resize:vertical;line-height:1.4}
+.acs{display:grid;gap:12px}
+.ac{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;background:var(--sunken)}
+.ac-head{display:flex;gap:8px;align-items:center}
+.ac-head .n{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.gwt{display:grid;grid-template-columns:62px minmax(0,1fr);gap:6px 8px;align-items:start}
+.gwt span{font-family:var(--mono);font-size:12.5px;font-weight:500;color:var(--accent);padding-top:7px}
+.health{display:flex;gap:14px;align-items:center}
+.ring{width:64px;height:64px;flex:none}
+.ring circle{fill:none;stroke-width:7}
+.ring .bg{stroke:var(--sunken)} .ring .fg{stroke-linecap:round;transition:stroke-dashoffset .3s}
+.ring text{font-family:var(--display);font-weight:800;font-size:19px;fill:var(--ink)}
+.verdict{font-family:var(--display);font-weight:600;font-size:19px}
+.invest{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.inv{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;padding:8px 10px;border-radius:8px;border-left:4px solid var(--line);background:var(--sunken)}
+.inv .L{font-family:var(--display);font-weight:800;font-size:20px;line-height:1.1;text-align:center}
+.inv b{font-weight:600;font-size:14px}
+.inv p{margin:2px 0 0;font-size:13.5px;color:var(--muted)}
+.inv.pass{border-left-color:var(--good)} .inv.pass .L{color:var(--good)}
+.inv.warn{border-left-color:var(--warn);background:var(--warn-soft)} .inv.warn .L{color:var(--warn)}
+.inv.fail{border-left-color:var(--bad);background:var(--bad-soft)} .inv.fail .L{color:var(--bad)}
+.state{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-left:6px}
+.pass .state{color:var(--good)} .warn .state{color:var(--warn)} .fail .state{color:var(--bad)}
+.card{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:8px;font-size:14.5px}
+.card h3{margin:0;font-family:var(--display);font-weight:600;font-size:17px}
+.card ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.card .pts{font-family:var(--mono);font-size:12px;background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:4px;justify-self:start}
+mark{background:var(--warn-soft);color:var(--warn);border-bottom:2px solid var(--warn);padding:0 1px;border-radius:2px}
+.k{font-weight:600}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><a href="index.html" style="color:inherit">← BA / PO Toolkit</a> · Requirements</div>
+    <h1>Story Quality Checker</h1>
+    <p class="lede">Write a user story with Given / When / Then acceptance criteria. It is checked against INVEST as you type, with vague words highlighted, then you can copy it straight into Jira or a Gherkin feature file.</p>
+  </header>
+
+  <div class="row">
+    <span class="note">Examples:</span>
+    <button type="button" class="btn" data-load="starter">Checkout story (nearly ready)</button>
+    <button type="button" class="btn" data-load="strong">Strong story</button>
+    <button type="button" class="btn" data-load="weak">Weak story</button>
+    <button type="button" class="btn btn-ghost" data-load="blank">Start blank</button>
+  </div>
+
+  <div class="cols">
+    <section class="panel" aria-labelledby="ed-h">
+      <h2 id="ed-h">Story</h2>
+      <div class="field"><label for="title">Title</label><input id="title" placeholder="Short name, e.g. Save card at checkout"></div>
+      <div class="story-line">
+        <label class="kw" for="role">As a</label><input id="role" placeholder="specific role, e.g. returning shopper">
+        <label class="kw" for="want">I want</label><textarea id="want" rows="2" placeholder="the capability or outcome"></textarea>
+        <label class="kw" for="benefit">so that</label><textarea id="benefit" rows="2" placeholder="the value it gives me"></textarea>
+      </div>
+      <div class="field" style="max-width:220px"><label for="points">Estimate (story points)</label>
+        <select id="points"><option value="">Not estimated</option><option>1</option><option>2</option><option>3</option><option>5</option><option>8</option><option>13</option><option>21</option></select></div>
+      <div class="row spread"><span class="lbl">Acceptance criteria</span><button type="button" class="btn btn-primary" id="add-ac">Add criterion</button></div>
+      <div class="acs" id="acs"></div>
+    </section>
+
+    <div class="side">
+      <section class="panel" aria-labelledby="ck-h">
+        <h2 id="ck-h">INVEST check</h2>
+        <div class="health">
+          <svg class="ring" viewBox="0 0 64 64" aria-hidden="true"><circle class="bg" cx="32" cy="32" r="27"/><circle class="fg" id="ring" cx="32" cy="32" r="27" transform="rotate(-90 32 32)"/><text id="ring-t" x="32" y="39" text-anchor="middle">0</text></svg>
+          <div><div class="verdict" id="verdict"></div><div class="note" id="verdict-sub"></div></div>
+        </div>
+        <ul class="invest" id="invest"></ul>
+      </section>
+      <section class="panel" aria-labelledby="pv-h">
+        <div class="row spread"><h2 id="pv-h">Preview</h2>
+          <div class="row"><button type="button" class="btn" id="copy-md">Copy for Jira</button><button type="button" class="btn" id="copy-gk">Copy as Gherkin</button></div></div>
+        <div class="card" id="preview"></div>
+        <div class="fallback" id="fallback" hidden><p class="note">Your browser blocked the clipboard. Select the text below and copy it.</p><textarea id="fallback-text" readonly></textarea></div>
+      </section>
+    </div>
+  </div>
+  <footer>Your draft is saved in this browser only. Nothing is sent anywhere. These checks are heuristics: they flag likely problems for a refinement conversation, they don't replace one.</footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY='ba-story-v1';
+const EX={
+  starter:{title:'Save card at checkout',role:'returning shopper',want:'to quickly save my card details during checkout',benefit:'I can pay in fewer steps on my next order',points:'8',acs:[
+    {name:'Card saved on opt-in',given:'I am signed in and on the payment step',when:'I tick "Save this card" and the payment succeeds',then:'the card appears in my saved payment methods showing only the last 4 digits'},
+    {name:'No save without consent',given:'I am signed in and on the payment step',when:'I pay without ticking "Save this card"',then:'no card details are stored'}]},
+  strong:{title:'Save card at checkout',role:'returning shopper',want:'to save my card details during checkout',benefit:'I can pay in fewer steps on my next order',points:'5',acs:[
+    {name:'Card saved on opt-in',given:'I am signed in and on the payment step',when:'I tick "Save this card" and the payment succeeds',then:'the card appears in my saved payment methods showing only the last 4 digits'},
+    {name:'No save without consent',given:'I am signed in and on the payment step',when:'I pay without ticking "Save this card"',then:'no card details are stored'},
+    {name:'Declined payment',given:'I ticked "Save this card"',when:'the payment is declined',then:'the card is not saved and I see the decline reason'}]},
+  weak:{title:'Reports',role:'user',want:'a fast and easy dashboard with a dropdown to export reports',benefit:'',points:'13',acs:[
+    {name:'Works',given:'',when:'I export',then:'it should be quick and user-friendly'}]},
+  blank:{title:'',role:'',want:'',benefit:'',points:'',acs:[{name:'',given:'',when:'',then:''}]}
+};
+const clone=o=>JSON.parse(JSON.stringify(o));
+let S=clone(EX.starter);
+try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.acs))S=v;}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+const VAGUE=['fast','faster','quick','quickly','easy','easily','simple','simply','user-friendly','user friendly','intuitive','seamless','seamlessly','efficient','efficiently','robust','flexible','optimal','optimised','optimized','appropriate','appropriately','as needed','etc','and/or','some','several','better','improved','modern','nice','properly','correctly','adequate','reasonable','minimal','should work'];
+const SOLUTION=['database','api','sql','table','dropdown','drop-down','button','modal','popup','pop-up','microservice','json','endpoint','cookie','checkbox','dashboard','spreadsheet','excel'];
+const GENERIC=['user','users','someone','somebody','person','people','anyone','everyone','system','the system'];
+const rx=list=>new RegExp('(^|[^a-z])('+list.map(w=>w.replace(/[.*+?^${}()|[\]\\/-]/g,'\\$&')).sort((a,b)=>b.length-a.length).join('|')+')(?=$|[^a-z])','gi');
+const RX_V=rx(VAGUE),RX_S=rx(SOLUTION);
+const found=(text,r)=>[...new Set([...String(text).matchAll(r)].map(m=>m[2].toLowerCase()))];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hl=t=>esc(t).replace(rx(VAGUE.map(w=>w.replace(/"/g,'&quot;'))),(m,p,w)=>p+'<mark>'+w+'</mark>');
+const list=a=>a.map(w=>'"'+w+'"').join(', ');
+
+function check(){
+  const r=[],want=S.want.trim(),ben=S.benefit.trim(),role=S.role.trim().toLowerCase().replace(/^(a|an|the)\s+/,'');
+  const acs=S.acs,filled=acs.filter(a=>a.given.trim()||a.when.trim()||a.then.trim());
+  const pts=+S.points||0;
+  // I
+  if(/\b(and|&|also|plus)\b/i.test(want)) r.push(['I','Independent','warn','The goal joins actions with "and". If each part has value alone, split it so they can ship separately.']);
+  else if(/\b(depends on|after story|blocked by|once .* is done)\b/i.test(want+' '+ben)) r.push(['I','Independent','warn','It mentions a dependency on other work. Try to remove it or order the backlog around it.']);
+  else r.push(['I','Independent','pass','No coupling to other stories found.']);
+  // N
+  const sol=found(want,RX_S);
+  r.push(sol.length?['N','Negotiable','warn',`It names a solution (${list(sol)}). Describe the need and leave the design choice to the team.`]:['N','Negotiable','pass','It states a need, not a fixed design.']);
+  // V
+  if(!ben) r.push(['V','Valuable','fail','Add a "so that" benefit. Without it nobody can judge the value.']);
+  else if(!role||GENERIC.includes(role)) r.push(['V','Valuable','warn',`"${S.role.trim()||'(empty)'}" is generic. Name the specific role who gets the value, e.g. "returning shopper".`]);
+  else if(ben.split(/\s+/).length<4) r.push(['V','Valuable','warn','The benefit is very short. Say what changes for this role.']);
+  else r.push(['V','Valuable','pass','Clear role and benefit.']);
+  // E
+  if(!filled.length) r.push(['E','Estimable','fail','There are no acceptance criteria, so the team has nothing to size against.']);
+  else if(!pts) r.push(['E','Estimable','warn','Not estimated yet. Size it in refinement.']);
+  else r.push(['E','Estimable','pass',`Estimated at ${pts} points with criteria to size against.`]);
+  // S
+  if(pts>=13) r.push(['S','Small','fail',`${pts} points rarely fits in one sprint. Split by workflow step, rule or data variation.`]);
+  else if(pts===8||filled.length>7) r.push(['S','Small','warn',pts===8?'8 points is at the edge of one sprint. Look for a thinner slice.':'More than 7 criteria often means more than one story.']);
+  else r.push(['S','Small','pass',pts?'Small enough for one sprint.':'Size unknown, but scope looks contained.']);
+  // T
+  const incomplete=filled.filter(a=>!a.given.trim()||!a.when.trim()||!a.then.trim()).length;
+  const vag=found([want,...filled.map(a=>a.given+' '+a.when+' '+a.then)].join(' '),RX_V);
+  if(!filled.length) r.push(['T','Testable','fail','Add at least one Given / When / Then criterion.']);
+  else if(vag.length) r.push(['T','Testable','warn',`Vague words can't be tested: ${list(vag)}. Replace them with a measurable result, e.g. "within 2 seconds".`]);
+  else if(incomplete) r.push(['T','Testable','warn',`${incomplete} criterion${incomplete>1?'s are':' is'} missing a Given, When or Then.`]);
+  else if(filled.length<2) r.push(['T','Testable','warn','Only one scenario. Add an error or edge case, e.g. a declined payment.']);
+  else r.push(['T','Testable','pass',`${filled.length} complete scenarios with measurable outcomes.`]);
+  return r;
+}
+
+function renderChecks(){
+  const r=check(),pts=r.reduce((n,x)=>n+(x[2]==='pass'?2:x[2]==='warn'?1:0),0);
+  const fails=r.filter(x=>x[2]==='fail').length;
+  const v=fails?['Not ready','Fix the red items before refinement.','var(--bad)']:pts>=12?['Ready for refinement','Meets every INVEST check.','var(--good)']:['Nearly ready','Review the amber items with the team.','var(--warn)'];
+  const C=2*Math.PI*27,ring=document.getElementById('ring');
+  ring.style.strokeDasharray=C;ring.style.strokeDashoffset=C*(1-pts/12);ring.style.stroke=v[2];
+  document.getElementById('ring-t').textContent=pts+'/12';
+  document.getElementById('verdict').textContent=v[0];
+  document.getElementById('verdict-sub').textContent=v[1];
+  document.getElementById('invest').innerHTML=r.map(([L,n,s,m])=>`<li class="inv ${s}"><span class="L">${L}</span><div><b>${n}</b><span class="state">${s==='pass'?'Pass':s==='warn'?'Review':'Fix'}</span><p>${esc(m)}</p></div></li>`).join('');
+  const acs=S.acs.filter(a=>a.given||a.when||a.then);
+  document.getElementById('preview').innerHTML=`<h3>${esc(S.title||'Untitled story')}</h3>
+    <div><span class="k">As a</span> ${hl(S.role||'…')}, <span class="k">I want</span> ${hl(S.want||'…')}, <span class="k">so that</span> ${hl(S.benefit||'…')}.</div>
+    ${S.points?`<span class="pts">${S.points} points</span>`:''}
+    ${acs.length?`<div class="lbl">Acceptance criteria</div><ol>${acs.map(a=>`<li>${a.name?`<b>${esc(a.name)}.</b> `:''}<span class="k">Given</span> ${hl(a.given||'…')}, <span class="k">when</span> ${hl(a.when||'…')}, <span class="k">then</span> ${hl(a.then||'…')}.</li>`).join('')}</ol>`:''}`;
+  save();
+}
+function renderEditor(){
+  ['title','role','want','benefit','points'].forEach(k=>document.getElementById(k).value=S[k]);
+  document.getElementById('acs').innerHTML=S.acs.map((a,i)=>`<div class="ac">
+    <div class="ac-head"><span class="n">AC ${i+1}</span><input id="ac${i}-name" data-i="${i}" data-f="name" value="${esc(a.name)}" placeholder="Scenario name" aria-label="Scenario name for criterion ${i+1}">
+      <button type="button" class="btn btn-ghost" data-rm="${i}" aria-label="Remove criterion ${i+1}">Remove</button></div>
+    <div class="gwt">${['given','when','then'].map(f=>`<span>${f[0].toUpperCase()+f.slice(1)}</span><textarea rows="1" id="ac${i}-${f}" data-i="${i}" data-f="${f}" aria-label="${f} for criterion ${i+1}">${esc(a[f])}</textarea>`).join('')}</div></div>`).join('');
+  renderChecks();
+}
+['title','role','want','benefit','points'].forEach(k=>document.getElementById(k).addEventListener('input',e=>{S[k]=e.target.value;renderChecks();}));
+const acsEl=document.getElementById('acs');
+acsEl.addEventListener('input',e=>{const t=e.target;if(t.dataset.i==null)return;S.acs[+t.dataset.i][t.dataset.f]=t.value;renderChecks();});
+acsEl.addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;S.acs.splice(+b.dataset.rm,1);renderEditor();});
+document.getElementById('add-ac').addEventListener('click',()=>{S.acs.push({name:'',given:'',when:'',then:''});renderEditor();document.getElementById(`ac${S.acs.length-1}-name`).focus();});
+document.querySelectorAll('[data-load]').forEach(b=>b.addEventListener('click',()=>{S=clone(EX[b.dataset.load]);renderEditor();toast(b.dataset.load==='blank'?'Blank story ready':'Example loaded');}));
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
+function copy(text,msg){
+  const fb=()=>{const box=document.getElementById('fallback'),ta=document.getElementById('fallback-text');ta.value=text;box.hidden=false;ta.focus();ta.select();};
+  try{navigator.clipboard.writeText(text).then(()=>{toast(msg);document.getElementById('fallback').hidden=true;},fb);}catch(e){fb();}
+}
+const acsOut=()=>S.acs.filter(a=>a.given||a.when||a.then);
+document.getElementById('copy-md').addEventListener('click',()=>{
+  let t=`**${S.title||'Untitled story'}**\n\nAs a ${S.role}, I want ${S.want}, so that ${S.benefit}.\n`;
+  if(S.points)t+=`\n**Estimate:** ${S.points} points\n`;
+  const a=acsOut();if(a.length)t+=`\n**Acceptance criteria**\n`+a.map((x,i)=>`${i+1}. ${x.name?`*${x.name}.* `:''}**Given** ${x.given}, **when** ${x.when}, **then** ${x.then}.`).join('\n')+'\n';
+  copy(t,'Copied. Paste it into the Jira description.');
+});
+document.getElementById('copy-gk').addEventListener('click',()=>{
+  let t=`Feature: ${S.title||'Untitled story'}\n  As a ${S.role}\n  I want ${S.want}\n  So that ${S.benefit}\n`;
+  acsOut().forEach((x,i)=>{t+=`\n  Scenario: ${x.name||'Criterion '+(i+1)}\n    Given ${x.given}\n    When ${x.when}\n    Then ${x.then}\n`;});
+  copy(t,'Copied as a Gherkin feature.');
+});
+renderEditor();
+</script>
+
+</body>
+</html>

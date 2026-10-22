@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BA / PO Toolkit</title>
+<meta name="description" content="Four free browser tools for Business Analysts and Product Owners: backlog prioritization, user story quality, stakeholder mapping and requirements traceability.">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunken:#ECEEF4; --ink:#171E2C; --muted:#5A6476; --line:#D9DDE7;
+  --accent:#2B42B0; --accent-soft:#E5E8F9; --on-accent:#FFFFFF; --marker:#F2C14E; --marker-ink:#3A2A00;
+  --good:#1D7A4E; --good-soft:#E2F3E9; --warn:#946000; --warn-soft:#FAEFD7; --bad:#B3261E; --bad-soft:#FAE3E1;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+.lede{color:var(--muted);max-width:65ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.formula{font-family:var(--mono);font-size:14px;background:var(--sunken);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.formula b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--sunken);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.score{font-weight:500;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+.fallback textarea{font-family:var(--mono);font-size:12.5px;min-height:140px}
+footer{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:720px){.tools{grid-template-columns:minmax(0,1fr)}}
+a.tool{display:grid;gap:8px;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+a.tool:hover{border-color:var(--accent)}
+a.tool h2{font-size:22px}
+a.tool p{margin:0;color:var(--muted)}
+.skill{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.go{font-weight:600;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Business Analysis · Product Ownership</div>
+    <h1>BA / PO Toolkit</h1>
+    <p class="lede">Four browser tools for everyday business analysis and product ownership work. Each one opens with a worked example, runs entirely in your browser, and copies its output straight into Jira, Confluence or Excel.</p>
+  </header>
+  <div class="tools">
+    <a class="tool" href="backlog-prioritizer.html"><span class="skill">Prioritization</span><h2>Backlog Prioritizer</h2><p>Score backlog items with RICE or WSJF and see how the ranking shifts between the two methods.</p><span class="go">Open tool →</span></a>
+    <a class="tool" href="story-checker.html"><span class="skill">Requirements</span><h2>Story Quality Checker</h2><p>Write user stories with Given / When / Then criteria and check them against INVEST, with vague words flagged.</p><span class="go">Open tool →</span></a>
+    <a class="tool" href="stakeholder-map.html"><span class="skill">Stakeholder management</span><h2>Stakeholder Power Map</h2><p>Drag stakeholders onto a power / interest grid and get an engagement plan for each quadrant.</p><span class="go">Open tool →</span></a>
+    <a class="tool" href="traceability-matrix.html"><span class="skill">Traceability</span><h2>Traceability Matrix Builder</h2><p>Link requirements to stories and tests, measure coverage, and list the gaps to close before sign-off.</p><span class="go">Open tool →</span></a>
+  </div>
+  <footer>Built by <a href="https://www.linkedin.com/in/viswanathan-paramasivan" style="color:var(--accent)">Viswanathan Paramasivan</a> with plain HTML, CSS and JavaScript. No sign-up, and no data leaves your browser.</footer>
+</div>
+</body>
+</html>

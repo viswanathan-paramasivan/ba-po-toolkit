@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Backlog Prioritizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: workbench — method switch + formula, ranked result, then the editable backlog grid */
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunken:#ECEEF4; --ink:#171E2C; --muted:#5A6476; --line:#D9DDE7;
+  --accent:#2B42B0; --accent-soft:#E5E8F9; --on-accent:#FFFFFF; --marker:#F2C14E; --marker-ink:#3A2A00;
+  --good:#1D7A4E; --good-soft:#E2F3E9; --warn:#946000; --warn-soft:#FAEFD7; --bad:#B3261E; --bad-soft:#FAE3E1;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+.lede{color:var(--muted);max-width:65ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.formula{font-family:var(--mono);font-size:14px;background:var(--sunken);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.formula b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--sunken);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.score{font-weight:500;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+.fallback textarea{font-family:var(--mono);font-size:12.5px;min-height:140px}
+footer{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* tool-specific */
+.ranks{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.rank{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center}
+.pos{font-family:var(--display);font-weight:800;font-size:20px;text-align:center;color:var(--muted)}
+.rank.top .pos{color:var(--ink)}
+.barbox{display:grid;gap:4px;min-width:0}
+.barlabel{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;min-width:0}
+.barlabel strong{font-weight:600;overflow-wrap:anywhere}
+.other{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.other .up{color:var(--good)} .other .down{color:var(--bad)}
+.track{height:10px;background:var(--sunken);border-radius:5px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:5px;transition:width .3s ease}
+.rank.top .fill{background:var(--marker)}
+.val{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:15px;min-width:64px;text-align:right}
+.tag{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;background:var(--marker);color:var(--marker-ink);padding:1px 6px;border-radius:4px}
+td input.name{min-width:200px}
+td input[type=number]{width:96px}
+td select{width:auto;min-width:120px}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 20px}
+.legend div{font-size:13px;color:var(--muted)}
+.legend b{color:var(--ink);font-weight:600;display:block;font-size:13.5px}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><a href="index.html" style="color:inherit">← BA / PO Toolkit</a> · Prioritization</div>
+    <h1>Backlog Prioritizer</h1>
+    <p class="lede">Score backlog items with RICE or WSJF and see the ranked order update as you type. Switch methods to see how the order changes when you weigh reach against urgency.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="method-h">
+    <div class="row spread">
+      <h2 id="method-h">Method</h2>
+      <div class="seg" role="group" aria-label="Scoring method">
+        <button type="button" id="m-rice" data-mode="rice">RICE</button>
+        <button type="button" id="m-wsjf" data-mode="wsjf">WSJF</button>
+      </div>
+    </div>
+    <div class="formula" id="formula"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="rank-h">
+    <div class="row spread">
+      <h2 id="rank-h">Ranked backlog</h2>
+      <button type="button" class="btn" id="copy">Copy as Markdown</button>
+    </div>
+    <ol class="ranks" id="ranks"></ol>
+    <div class="fallback" id="fallback" hidden>
+      <p class="note">Your browser blocked the clipboard. Select the text below and copy it.</p>
+      <textarea id="fallback-text" readonly></textarea>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="items-h">
+    <div class="row spread">
+      <h2 id="items-h">Backlog items</h2>
+      <div class="row">
+        <button type="button" class="btn btn-primary" id="add">Add item</button>
+        <button type="button" class="btn" id="sample">Load example backlog</button>
+        <button type="button" class="btn btn-ghost" id="clear">Clear all</button>
+      </div>
+    </div>
+    <p class="note" id="sample-note">Showing an example backlog for an online store's checkout team. Edit any value, or clear it and enter your own.</p>
+    <div class="scroll"><table id="grid"></table></div>
+  </section>
+
+  <footer>Your edits are saved in this browser only. Nothing is sent anywhere.</footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY='ba-prioritizer-v1';
+const IMPACT=[[3,'3 · Massive'],[2,'2 · High'],[1,'1 · Medium'],[0.5,'0.5 · Low'],[0.25,'0.25 · Minimal']];
+const CONF=[[100,'100% · High'],[80,'80% · Medium'],[50,'50% · Low']];
+const FIB=[1,2,3,5,8,13,20];
+const SAMPLE=[
+  {name:'Guest checkout (no account needed)',reach:4200,impact:2,conf:80,effort:3,bv:13,tc:8,rr:3,js:8},
+  {name:'Saved payment methods',reach:2600,impact:1,conf:100,effort:2,bv:8,tc:3,rr:2,js:5},
+  {name:'Order tracking by SMS',reach:3100,impact:1,conf:80,effort:1.5,bv:5,tc:5,rr:1,js:3},
+  {name:'Accessibility fixes for WCAG 2.2 AA audit',reach:1200,impact:2,conf:100,effort:2,bv:8,tc:13,rr:8,js:5},
+  {name:'Admin bulk order export',reach:150,impact:0.5,conf:80,effort:1,bv:2,tc:1,rr:1,js:2},
+  {name:'Personalised product recommendations',reach:5000,impact:3,conf:50,effort:8,bv:13,tc:2,rr:5,js:20}
+];
+let uid=1;
+const withIds=a=>a.map(x=>({id:uid++,...x}));
+let state={mode:'rice',items:withIds(SAMPLE),isSample:true};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&Array.isArray(s.items)){state=s;uid=Math.max(0,...s.items.map(i=>i.id))+1;}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+
+const METHODS={
+  rice:{formula:'Score = (<b>Reach</b> × <b>Impact</b> × <b>Confidence</b>) ÷ <b>Effort</b>',
+    legend:[['Reach','People affected per quarter (users, orders, tickets).'],['Impact','Effect per person, from 0.25 (minimal) to 3 (massive).'],['Confidence','How sure you are of the estimates: 50%, 80% or 100%.'],['Effort','Person-months across design, build and test.']]},
+  wsjf:{formula:'WSJF = (<b>Business value</b> + <b>Time criticality</b> + <b>Risk reduction</b>) ÷ <b>Job size</b>',
+    legend:[['Cost of Delay','The sum of the first three, scored relatively on 1–20 (SAFe Fibonacci).'],['Time criticality','Does value decay or a deadline hit if we wait?'],['Risk reduction / opportunity','Does it lower risk or unlock future work?'],['Job size','Relative size, 1–20. Smaller jobs rise to the top.']]}
+};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function score(it,m){
+  if(m==='rice'){const e=+it.effort;return e>0?(+it.reach||0)*(+it.impact)*(+it.conf/100)/e:0;}
+  const js=+it.js;return js>0?((+it.bv)+(+it.tc)+(+it.rr))/js:0;
+}
+const fmt=(v,m)=>m==='rice'?(v>=100?Math.round(v).toLocaleString():v.toFixed(1)):v.toFixed(2);
+function ranked(m){return state.items.map(it=>({it,s:score(it,m)})).sort((a,b)=>b.s-a.s||a.it.id-b.it.id);}
+
+function renderMethod(){
+  document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===state.mode));
+  const M=METHODS[state.mode];
+  document.getElementById('formula').innerHTML=M.formula;
+  document.getElementById('legend').innerHTML=M.legend.map(([t,d])=>`<div><b>${t}</b>${d}</div>`).join('');
+}
+function renderRanks(){
+  const m=state.mode,other=m==='rice'?'wsjf':'rice';
+  const list=ranked(m),otherRank=new Map(ranked(other).map((r,i)=>[r.it.id,i+1]));
+  const max=Math.max(...list.map(r=>r.s),0)||1;
+  const el=document.getElementById('ranks');
+  if(!list.length){el.innerHTML='<li class="note">No items yet. Select <b>Add item</b> to start your backlog.</li>';return;}
+  el.innerHTML=list.map((r,i)=>{
+    const o=otherRank.get(r.it.id),d=o-(i+1);
+    const shift=d===0?'same rank':d>0?`<span class="down">#${o}</span>`:`<span class="up">#${o}</span>`;
+    return `<li class="rank${i===0&&r.s>0?' top':''}">
+      <span class="pos">${i+1}</span>
+      <div class="barbox"><div class="barlabel"><strong>${esc(r.it.name||'Untitled item')}</strong>${i===0&&r.s>0?'<span class="tag">Do first</span>':''}
+        <span class="other">${other.toUpperCase()}: ${d===0?'#'+o+' (same)':shift}</span></div>
+        <div class="track"><div class="fill" style="width:${(r.s/max*100).toFixed(1)}%"></div></div></div>
+      <span class="val">${fmt(r.s,m)}</span></li>`;}).join('');
+}
+function opts(list,val){return list.map(([v,l])=>`<option value="${v}"${+v===+val?' selected':''}>${l}</option>`).join('');}
+function fib(val){return FIB.map(v=>`<option value="${v}"${v===+val?' selected':''}>${v}</option>`).join('');}
+function renderGrid(){
+  const m=state.mode,g=document.getElementById('grid');
+  const head=m==='rice'
+    ?'<th>Item</th><th>Reach / qtr</th><th>Impact</th><th>Confidence</th><th>Effort (p-months)</th><th>RICE</th><th></th>'
+    :'<th>Item</th><th>Business value</th><th>Time criticality</th><th>Risk reduction</th><th>Job size</th><th>WSJF</th><th></th>';
+  const rows=state.items.map(it=>{
+    const n=`<td><input class="name" id="n-${it.id}" data-id="${it.id}" data-f="name" value="${esc(it.name)}" aria-label="Item name" placeholder="Describe the item"></td>`;
+    const cells=m==='rice'
+      ?`<td><input type="number" min="0" step="10" id="r-${it.id}" data-id="${it.id}" data-f="reach" value="${it.reach}" aria-label="Reach"></td>
+        <td><select id="i-${it.id}" data-id="${it.id}" data-f="impact" aria-label="Impact">${opts(IMPACT,it.impact)}</select></td>
+        <td><select id="c-${it.id}" data-id="${it.id}" data-f="conf" aria-label="Confidence">${opts(CONF,it.conf)}</select></td>
+        <td><input type="number" min="0.5" step="0.5" id="e-${it.id}" data-id="${it.id}" data-f="effort" value="${it.effort}" aria-label="Effort"></td>`
+      :`<td><select id="bv-${it.id}" data-id="${it.id}" data-f="bv" aria-label="Business value">${fib(it.bv)}</select></td>
+        <td><select id="tc-${it.id}" data-id="${it.id}" data-f="tc" aria-label="Time criticality">${fib(it.tc)}</select></td>
+        <td><select id="rr-${it.id}" data-id="${it.id}" data-f="rr" aria-label="Risk reduction">${fib(it.rr)}</select></td>
+        <td><select id="js-${it.id}" data-id="${it.id}" data-f="js" aria-label="Job size">${fib(it.js)}</select></td>`;
+    return `<tr>${n}${cells}<td class="score num" id="s-${it.id}">${fmt(score(it,m),m)}</td>
+      <td><button type="button" class="btn btn-ghost" data-del="${it.id}" aria-label="Delete ${esc(it.name)}">Delete</button></td></tr>`;
+  }).join('');
+  g.innerHTML=`<thead><tr>${head}</tr></thead><tbody>${rows||'<tr><td colspan="7" class="note">Your backlog is empty.</td></tr>'}</tbody>`;
+  document.getElementById('sample-note').hidden=!state.isSample;
+}
+function renderAll(){renderMethod();renderRanks();renderGrid();save();}
+
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.mode;renderAll();}));
+document.getElementById('grid').addEventListener('input',e=>{
+  const t=e.target,id=+t.dataset.id;if(!id)return;
+  const it=state.items.find(x=>x.id===id);if(!it)return;
+  it[t.dataset.f]=t.dataset.f==='name'?t.value:(t.value===''?'':+t.value);
+  const s=document.getElementById('s-'+id);if(s)s.textContent=fmt(score(it,state.mode),state.mode);
+  renderRanks();save();
+});
+document.getElementById('grid').addEventListener('click',e=>{
+  const d=e.target.closest('[data-del]');if(!d)return;
+  state.items=state.items.filter(x=>x.id!==+d.dataset.del);renderAll();
+});
+document.getElementById('add').addEventListener('click',()=>{
+  const it={id:uid++,name:'',reach:500,impact:1,conf:80,effort:1,bv:5,tc:3,rr:2,js:3};
+  state.items.push(it);state.isSample=false;renderAll();
+  const f=document.getElementById('n-'+it.id);if(f)f.focus();
+});
+document.getElementById('sample').addEventListener('click',()=>{state.items=withIds(SAMPLE);state.isSample=true;renderAll();toast('Example backlog loaded');});
+document.getElementById('clear').addEventListener('click',()=>{state.items=[];state.isSample=false;renderAll();});
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
+function markdown(){
+  const m=state.mode,M=m.toUpperCase();
+  const head=m==='rice'?'| # | Item | Reach | Impact | Confidence | Effort | RICE |\n|---|---|---|---|---|---|---|'
+    :'| # | Item | Business value | Time criticality | Risk reduction | Job size | WSJF |\n|---|---|---|---|---|---|---|';
+  const rows=ranked(m).map((r,i)=>{const x=r.it,n=(x.name||'Untitled').replace(/\|/g,'/');
+    return m==='rice'?`| ${i+1} | ${n} | ${x.reach} | ${x.impact} | ${x.conf}% | ${x.effort} | ${fmt(r.s,m)} |`
+      :`| ${i+1} | ${n} | ${x.bv} | ${x.tc} | ${x.rr} | ${x.js} | ${fmt(r.s,m)} |`;});
+  return `## Backlog ranked by ${M}\n\n${head}\n${rows.join('\n')}\n`;
+}
+document.getElementById('copy').addEventListener('click',()=>{
+  const text=markdown();
+  const fb=()=>{const box=document.getElementById('fallback'),ta=document.getElementById('fallback-text');ta.value=text;box.hidden=false;ta.focus();ta.select();};
+  try{navigator.clipboard.writeText(text).then(()=>{toast('Copied. Paste it into Jira, Confluence or Notion.');document.getElementById('fallback').hidden=true;},fb);}catch(e){fb();}
+});
+renderAll();
+</script>
+
+</body>
+</html>

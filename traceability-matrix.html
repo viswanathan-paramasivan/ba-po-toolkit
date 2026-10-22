@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Traceability Matrix Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: summary first (coverage figures + gaps), then the requirement × story matrix, then the three source registers */
+
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunken:#ECEEF4; --ink:#171E2C; --muted:#5A6476; --line:#D9DDE7;
+  --accent:#2B42B0; --accent-soft:#E5E8F9; --on-accent:#FFFFFF; --marker:#F2C14E; --marker-ink:#3A2A00;
+  --good:#1D7A4E; --good-soft:#E2F3E9; --warn:#946000; --warn-soft:#FAEFD7; --bad:#B3261E; --bad-soft:#FAE3E1;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+.lede{color:var(--muted);max-width:65ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.formula{font-family:var(--mono);font-size:14px;background:var(--sunken);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.formula b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--sunken);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.score{font-weight:500;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+.fallback textarea{font-family:var(--mono);font-size:12.5px;min-height:140px}
+footer{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:6px;min-width:0}
+.stat .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat b{font-family:var(--display);font-weight:800;font-size:30px;line-height:1}
+.stat .meter{height:6px;background:var(--sunken);border-radius:3px;overflow:hidden}
+.stat .meter i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.stat.alert b{color:var(--bad)}
+.stat small{font-size:12.5px;color:var(--muted)}
+.issues{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.issues li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;font-size:14px;padding:7px 10px;border-radius:7px;background:var(--sunken)}
+.pill{font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;white-space:nowrap;font-weight:500}
+.p-good{background:var(--good-soft);color:var(--good)} .p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-bad{background:var(--bad-soft);color:var(--bad)} .p-info{background:var(--accent-soft);color:var(--accent)}
+.mx th.st{writing-mode:vertical-rl;transform:rotate(180deg);text-align:left;padding:8px 4px;height:84px;min-width:34px}
+.mx td.c{text-align:center;padding:6px 4px;border-left:1px solid var(--line)}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%}
+.d-pass{background:var(--good)} .d-fail{background:var(--bad)} .d-run{background:var(--accent)} .d-none{background:transparent;border:2px solid var(--warn)}
+.mx td.rq{white-space:nowrap}
+.mx .rid{font-family:var(--mono);font-size:13px;font-weight:500}
+.mx .rtx{color:var(--muted);font-size:13px;max-width:34ch;white-space:normal;display:block}
+.prio{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.key{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.key span{display:inline-flex;gap:6px;align-items:center}
+.reg input{min-width:90px} .reg input.id{width:96px;min-width:96px;font-family:var(--mono)} .reg input.long{min-width:260px}
+.reg select{width:auto}
+.bad-ref{border-color:var(--bad)!important}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><a href="index.html" style="color:inherit">← BA / PO Toolkit</a> · Traceability</div>
+    <h1>Traceability Matrix Builder</h1>
+    <p class="lede">Link business requirements to user stories and test cases. The matrix shows which requirements are delivered, which are tested, and where the gaps are before sign-off.</p>
+  </header>
+  <p class="note" id="sample-note">Showing an example: an online personal loan application. Edit the registers at the bottom of the page, or clear them and add your own.</p>
+
+  <div class="stats" id="stats"></div>
+
+  <section class="panel" aria-labelledby="gap-h">
+    <h2 id="gap-h">Gaps to resolve</h2>
+    <ul class="issues" id="issues"></ul>
+  </section>
+
+  <section class="panel" aria-labelledby="mx-h">
+    <div class="row spread">
+      <h2 id="mx-h">Requirement × story matrix</h2>
+      <div class="row"><button type="button" class="btn" id="copy-md">Copy as Markdown</button><button type="button" class="btn" id="copy-csv">Copy as CSV</button></div>
+    </div>
+    <div class="key"><span><i class="dot d-pass"></i>Linked, tests pass</span><span><i class="dot d-fail"></i>Linked, a test fails</span><span><i class="dot d-run"></i>Linked, tests not run</span><span><i class="dot d-none"></i>Linked, no tests</span></div>
+    <div class="fallback" id="fallback" hidden><p class="note">Your browser blocked the clipboard. Select the text below and copy it.</p><textarea id="fallback-text" readonly></textarea></div>
+    <div class="scroll"><table class="mx" id="mx"></table></div>
+  </section>
+
+  <section class="panel reg" aria-labelledby="reg-h">
+    <div class="row spread">
+      <h2 id="reg-h">Registers</h2>
+      <div class="seg" role="group" aria-label="Register">
+        <button type="button" data-tab="reqs">Requirements</button><button type="button" data-tab="stories">User stories</button><button type="button" data-tab="tests">Test cases</button>
+      </div>
+    </div>
+    <p class="note" id="tab-hint"></p>
+    <div class="scroll"><table id="reg"></table></div>
+    <div class="row">
+      <button type="button" class="btn btn-primary" id="add">Add row</button>
+      <button type="button" class="btn" id="sample">Load example</button>
+      <button type="button" class="btn btn-ghost" id="clear">Clear all</button>
+    </div>
+  </section>
+  <footer>Your matrix is saved in this browser only. Nothing is sent anywhere.</footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY='ba-rtm-v1';
+const SAMPLE={
+  reqs:[['BR-01','Applicant can apply for a personal loan online','Must'],['BR-02','Identity is verified before a lending decision','Must'],['BR-03','Standard applications get a decision within 60 seconds','Must'],['BR-04','Applicant can save and resume an application','Should'],['BR-05','Adviser can see the full history of an application','Should'],['BR-06','Applicant can upload payslips as PDF or photo','Could'],['BR-07','Marketing consent is captured separately from loan terms','Must']].map(([id,text,prio])=>({id,text,prio})),
+  stories:[['US-101','Start a loan application from the product page','BR-01'],['US-102','Enter income and monthly expenses','BR-01, BR-03'],['US-103','Verify identity with a document check','BR-02'],['US-104','Show an instant decision','BR-03'],['US-105','Save progress and resume from an email link','BR-04'],['US-106','Adviser application timeline','BR-05'],['US-107','Dark mode for the application form','']].map(([id,text,links])=>({id,text,links})),
+  tests:[['TC-01','Apply end to end on the happy path','US-101, US-102','Pass'],['TC-02','Missing income shows a field error','US-102','Pass'],['TC-03','Expired ID document is rejected','US-103','Fail'],['TC-04','Decision under 60 s with 50 concurrent users','US-104','Not run'],['TC-05','Resume link expires after 30 days','US-105','Pass'],['TC-06','Upload a 12 MB payslip photo','US-108','Not run']].map(([id,text,links,status])=>({id,text,links,status}))
+};
+const clone=o=>JSON.parse(JSON.stringify(o));
+let S={...clone(SAMPLE),isSample:true,tab:'reqs'};
+try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.reqs))S=v;}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ids=s=>String(s||'').toUpperCase().split(/[\s,;]+/).filter(Boolean);
+const norm=s=>String(s||'').trim().toUpperCase();
+
+function analyse(){
+  const reqIds=new Set(S.reqs.map(r=>norm(r.id))),storyIds=new Set(S.stories.map(s=>norm(s.id)));
+  const testsFor=new Map(S.stories.map(s=>[norm(s.id),[]]));
+  S.tests.forEach(t=>ids(t.links).forEach(sid=>{if(testsFor.has(sid))testsFor.get(sid).push(t);}));
+  const storyState=sid=>{const ts=testsFor.get(sid)||[];if(!ts.length)return'none';if(ts.some(t=>t.status==='Fail'))return'fail';if(ts.some(t=>t.status!=='Pass'))return'run';return'pass';};
+  const rows=S.reqs.map(r=>{
+    const rid=norm(r.id),stories=S.stories.filter(s=>ids(s.links).includes(rid));
+    const tests=[...new Set(stories.flatMap(s=>testsFor.get(norm(s.id))||[]))];
+    let st;
+    if(!stories.length)st=['No story','p-bad'];
+    else if(!tests.length)st=['Untested','p-warn'];
+    else if(tests.some(t=>t.status==='Fail'))st=['Failing','p-bad'];
+    else if(tests.some(t=>t.status!=='Pass'))st=['In test','p-info'];
+    else st=['Verified','p-good'];
+    return{r,rid,stories,tests,st};
+  });
+  const issues=[];
+  rows.forEach(x=>{
+    if(!x.stories.length)issues.push(['p-bad',`${x.r.id} has no user story`,`${x.r.prio==='Must'?'Must-have requirement: ':''}${x.r.text}. Write a story or confirm it is out of scope.`]);
+    else if(!x.tests.length)issues.push(['p-warn',`${x.r.id} has no test`,`Stories ${x.stories.map(s=>s.id).join(', ')} need at least one test case.`]);
+    x.tests.filter(t=>t.status==='Fail').forEach(t=>issues.push(['p-bad',`${t.id} is failing`,`Blocks ${x.r.id}: ${t.text}.`]));
+  });
+  S.stories.forEach(s=>{const l=ids(s.links);
+    if(!l.length)issues.push(['p-warn',`${s.id} traces to no requirement`,`"${s.text}" may be scope creep. Link it to a requirement or challenge it.`]);
+    l.filter(id=>!reqIds.has(id)).forEach(id=>issues.push(['p-bad',`${s.id} links to unknown ${id}`,'Check the requirement ID.']));});
+  S.tests.forEach(t=>{const l=ids(t.links);
+    if(!l.length)issues.push(['p-warn',`${t.id} tests no story`,'Link it to the story it verifies.']);
+    l.filter(id=>!storyIds.has(id)).forEach(id=>issues.push(['p-bad',`${t.id} links to unknown ${id}`,'Check the story ID.']));});
+  const seen=new Set();issues.sort((a,b)=>(a[0]==='p-bad'?0:1)-(b[0]==='p-bad'?0:1));
+  return{rows,issues:issues.filter(i=>{const k=i[1];if(seen.has(k))return false;seen.add(k);return true;}),storyState};
+}
+
+function render(){
+  const A=analyse(),n=A.rows.length||1;
+  const withStory=A.rows.filter(x=>x.stories.length).length,withTest=A.rows.filter(x=>x.tests.length).length,verified=A.rows.filter(x=>x.st[0]==='Verified').length;
+  const mustGaps=A.rows.filter(x=>x.r.prio==='Must'&&x.st[0]!=='Verified').length;
+  const pct=v=>Math.round(v/n*100);
+  const stat=(l,v,sub,p,alert)=>`<div class="stat${alert?' alert':''}"><span class="lbl">${l}</span><b>${v}</b>${p!=null?`<span class="meter"><i style="width:${p}%"></i></span>`:''}<small>${sub}</small></div>`;
+  document.getElementById('stats').innerHTML=
+    stat('Covered by stories',pct(withStory)+'%',`${withStory} of ${A.rows.length} requirements`,pct(withStory))+
+    stat('Covered by tests',pct(withTest)+'%',`${withTest} of ${A.rows.length} requirements`,pct(withTest))+
+    stat('Verified',pct(verified)+'%',`${verified} of ${A.rows.length} with all tests passing`,pct(verified))+
+    stat('Must-haves not verified',mustGaps,mustGaps?'Resolve before sign-off':'Ready for sign-off',null,mustGaps>0);
+  document.getElementById('issues').innerHTML=A.issues.length?A.issues.map(([c,t,d])=>`<li><span class="pill ${c}">${c==='p-bad'?'Fix':'Review'}</span><span><b>${esc(t)}.</b> ${esc(d)}</span></li>`).join(''):'<li><span class="pill p-good">Clear</span><span>Every requirement has a story and passing tests, and nothing is orphaned.</span></li>';
+  const st=S.stories;
+  document.getElementById('mx').innerHTML=`<thead><tr><th>Requirement</th>${st.map(s=>`<th class="st" title="${esc(s.text)}">${esc(s.id)}</th>`).join('')}<th>Tests</th><th>Status</th></tr></thead><tbody>
+    ${A.rows.map(x=>`<tr><td class="rq"><span class="rid">${esc(x.r.id)}</span> <span class="prio">${esc(x.r.prio)}</span><span class="rtx">${esc(x.r.text)}</span></td>
+      ${st.map(s=>{const on=ids(s.links).includes(x.rid);const ss=A.storyState(norm(s.id));return `<td class="c">${on?`<i class="dot d-${ss}" title="${esc(s.id)}: ${({pass:'tests pass',fail:'a test fails',run:'tests not run',none:'no tests'})[ss]}"></i>`:''}</td>`;}).join('')}
+      <td class="num" style="font-size:12.5px">${x.tests.map(t=>esc(t.id)).join(', ')||'–'}</td><td><span class="pill ${x.st[1]}">${x.st[0]}</span></td></tr>`).join('')}</tbody>`;
+  document.getElementById('sample-note').hidden=!S.isSample;
+  window._A=A;save();
+}
+
+const TABS={
+  reqs:{hint:'Business requirements, with MoSCoW priority.',head:'<th>ID</th><th>Requirement</th><th>Priority</th><th></th>',
+    row:(r,i)=>`<td><input class="id" id="rq-id-${i}" data-k="reqs" data-i="${i}" data-f="id" value="${esc(r.id)}" aria-label="Requirement ID"></td>
+      <td><input class="long" id="rq-tx-${i}" data-k="reqs" data-i="${i}" data-f="text" value="${esc(r.text)}" aria-label="Requirement"></td>
+      <td><select id="rq-pr-${i}" data-k="reqs" data-i="${i}" data-f="prio" aria-label="Priority">${['Must','Should','Could',"Won't"].map(p=>`<option${p===r.prio?' selected':''}>${p}</option>`).join('')}</select></td>`,
+    blank:n=>({id:'BR-'+String(n).padStart(2,'0'),text:'',prio:'Must'})},
+  stories:{hint:'User stories. List the requirement IDs each one delivers, separated by commas.',head:'<th>ID</th><th>Story</th><th>Delivers requirements</th><th></th>',
+    row:(r,i)=>`<td><input class="id" id="us-id-${i}" data-k="stories" data-i="${i}" data-f="id" value="${esc(r.id)}" aria-label="Story ID"></td>
+      <td><input class="long" id="us-tx-${i}" data-k="stories" data-i="${i}" data-f="text" value="${esc(r.text)}" aria-label="Story"></td>
+      <td><input id="us-ln-${i}" data-k="stories" data-i="${i}" data-f="links" value="${esc(r.links)}" placeholder="BR-01, BR-02" aria-label="Linked requirement IDs"></td>`,
+    blank:n=>({id:'US-'+(100+n),text:'',links:''})},
+  tests:{hint:'Test cases. List the story IDs each one verifies, and the latest result.',head:'<th>ID</th><th>Test case</th><th>Verifies stories</th><th>Result</th><th></th>',
+    row:(r,i)=>`<td><input class="id" id="tc-id-${i}" data-k="tests" data-i="${i}" data-f="id" value="${esc(r.id)}" aria-label="Test ID"></td>
+      <td><input class="long" id="tc-tx-${i}" data-k="tests" data-i="${i}" data-f="text" value="${esc(r.text)}" aria-label="Test case"></td>
+      <td><input id="tc-ln-${i}" data-k="tests" data-i="${i}" data-f="links" value="${esc(r.links)}" placeholder="US-101" aria-label="Linked story IDs"></td>
+      <td><select id="tc-st-${i}" data-k="tests" data-i="${i}" data-f="status" aria-label="Result">${['Pass','Fail','Not run'].map(p=>`<option${p===r.status?' selected':''}>${p}</option>`).join('')}</select></td>`,
+    blank:n=>({id:'TC-'+String(n).padStart(2,'0'),text:'',links:'',status:'Not run'})}
+};
+function renderReg(){
+  const T=TABS[S.tab],list=S[S.tab];
+  document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab===S.tab));
+  document.getElementById('tab-hint').textContent=T.hint;
+  document.getElementById('reg').innerHTML=`<thead><tr>${T.head}</tr></thead><tbody>${list.map((r,i)=>`<tr>${T.row(r,i)}<td><button type="button" class="btn btn-ghost" data-del="${i}" aria-label="Delete ${esc(r.id)}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="note">Nothing here yet. Select Add row.</td></tr>'}</tbody>`;
+  flagRefs();
+}
+function flagRefs(){
+  const known={stories:new Set(S.reqs.map(r=>norm(r.id))),tests:new Set(S.stories.map(s=>norm(s.id)))}[S.tab];if(!known)return;
+  document.querySelectorAll('#reg input[data-f="links"]').forEach(inp=>inp.classList.toggle('bad-ref',ids(inp.value).some(id=>!known.has(id))));
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{S.tab=b.dataset.tab;renderReg();save();}));
+const reg=document.getElementById('reg');
+reg.addEventListener('input',e=>{const t=e.target;if(t.dataset.k==null)return;S[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;render();flagRefs();});
+reg.addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;S[S.tab].splice(+b.dataset.del,1);renderReg();render();});
+document.getElementById('add').addEventListener('click',()=>{const L=S[S.tab];L.push(TABS[S.tab].blank(L.length+1));S.isSample=false;renderReg();render();
+  const inputs=reg.querySelectorAll('tbody tr:last-child input');if(inputs[1])inputs[1].focus();});
+document.getElementById('sample').addEventListener('click',()=>{S={...clone(SAMPLE),isSample:true,tab:S.tab};renderReg();render();toast('Example loaded');});
+document.getElementById('clear').addEventListener('click',()=>{S={reqs:[],stories:[],tests:[],isSample:false,tab:'reqs'};renderReg();render();});
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
+function copy(text,msg){
+  const fb=()=>{const box=document.getElementById('fallback'),ta=document.getElementById('fallback-text');ta.value=text;box.hidden=false;ta.focus();ta.select();};
+  try{navigator.clipboard.writeText(text).then(()=>{toast(msg);document.getElementById('fallback').hidden=true;},fb);}catch(e){fb();}
+}
+const tabular=()=>window._A.rows.map(x=>[x.r.id,x.r.text,x.r.prio,x.stories.map(s=>s.id).join(', '),x.tests.map(t=>t.id+' ('+t.status+')').join(', '),x.st[0]]);
+document.getElementById('copy-md').addEventListener('click',()=>{
+  const c=v=>String(v).replace(/\|/g,'/');
+  copy('| Req ID | Requirement | Priority | Stories | Tests | Status |\n|---|---|---|---|---|---|\n'+tabular().map(r=>'| '+r.map(c).join(' | ')+' |').join('\n')+'\n','Copied. Paste it into Confluence or Notion.');
+});
+document.getElementById('copy-csv').addEventListener('click',()=>{
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  copy([['Req ID','Requirement','Priority','Stories','Tests','Status'],...tabular()].map(r=>r.map(q).join(',')).join('\n'),'Copied. Paste it into Excel or Google Sheets.');
+});
+renderReg();render();
+</script>
+
+</body>
+</html>

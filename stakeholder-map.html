@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Stakeholder Power Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the power/interest grid is the hero; the engagement plan it generates sits below */
+
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunken:#ECEEF4; --ink:#171E2C; --muted:#5A6476; --line:#D9DDE7;
+  --accent:#2B42B0; --accent-soft:#E5E8F9; --on-accent:#FFFFFF; --marker:#F2C14E; --marker-ink:#3A2A00;
+  --good:#1D7A4E; --good-soft:#E2F3E9; --warn:#946000; --warn-soft:#FAEFD7; --bad:#B3261E; --bad-soft:#FAE3E1;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+.lede{color:var(--muted);max-width:65ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.formula{font-family:var(--mono);font-size:14px;background:var(--sunken);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.formula b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--sunken);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.score{font-weight:500;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+.fallback textarea{font-family:var(--mono);font-size:12.5px;min-height:140px}
+footer{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+:root{--q1:#E9ECFB;--q2:#F5EFE1;--q3:#E6F2EC;--q4:#EEF0F4}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--q1:#1E2545;--q2:#2E2718;--q3:#17291F;--q4:#1A1F29}}
+:root[data-theme="dark"]{--q1:#1E2545;--q2:#2E2718;--q3:#17291F;--q4:#1A1F29}
+.top{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;align-items:start}
+@media (max-width:860px){.top{grid-template-columns:minmax(0,1fr)}}
+.mapwrap{display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:minmax(0,1fr) 28px;gap:6px}
+.yaxis{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.xaxis{grid-column:2;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.axis-mid{color:var(--ink);font-weight:500}
+.map{position:relative;aspect-ratio:4/3;max-width:100%;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;touch-action:none;user-select:none}
+.quad{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.quad b{font-family:var(--display);font-weight:600;font-size:16px}
+.quad span{font-size:12px;color:var(--muted);max-width:26ch}
+.q-ks{background:var(--q2)} .q-mc{background:var(--q1);align-items:flex-end;text-align:right}
+.q-mo{background:var(--q4);justify-content:flex-end} .q-ki{background:var(--q3);align-items:flex-end;justify-content:flex-end;text-align:right}
+.chip{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 3px;font-size:12.5px;font-weight:500;cursor:grab;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.15);touch-action:none;z-index:2;max-width:46%}
+.chip span.t{overflow:hidden;text-overflow:ellipsis}
+.chip:active{cursor:grabbing}
+.chip.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);z-index:3}
+.av{width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-family:var(--mono);font-size:10px;display:grid;place-items:center;flex:none}
+.side{display:grid;gap:14px}
+.field{display:grid;gap:5px}
+.field label{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.counts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.count{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.count b{font-family:var(--display);font-weight:800;font-size:22px;display:block;line-height:1.1}
+.count span{font-size:12px;color:var(--muted)}
+.group h3{font-family:var(--display);font-weight:600;font-size:17px;margin:0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.group h3 small{font-family:var(--body);font-weight:400;font-size:13px;color:var(--muted)}
+.group{display:grid;gap:8px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid var(--line)}
+td input{min-width:120px}
+td input.pi{width:64px;min-width:64px}
+.plan{display:grid;gap:22px}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><a href="index.html" style="color:inherit">← BA / PO Toolkit</a> · Stakeholder management</div>
+    <h1>Stakeholder Power Map</h1>
+    <p class="lede">Place each stakeholder by how much power they hold over the project and how interested they are in it. The grid turns their position into an engagement plan you can copy into your communication plan.</p>
+  </header>
+
+  <div class="top">
+    <section class="panel" aria-labelledby="map-h">
+      <div class="row spread"><h2 id="map-h">Power / interest grid</h2><span class="note">Drag a name, or select it and use the arrow keys.</span></div>
+      <div class="mapwrap">
+        <div class="yaxis"><span>Low</span><span class="axis-mid">Power</span><span>High</span></div>
+        <div class="map" id="map">
+          <div class="quad q-ks"><b>Keep satisfied</b><span>High power, low interest</span></div>
+          <div class="quad q-mc"><b>Manage closely</b><span>High power, high interest</span></div>
+          <div class="quad q-mo"><b>Monitor</b><span>Low power, low interest</span></div>
+          <div class="quad q-ki"><b>Keep informed</b><span>Low power, high interest</span></div>
+        </div>
+        <div class="xaxis"><span>Low</span><span class="axis-mid">Interest</span><span>High</span></div>
+      </div>
+    </section>
+
+    <div class="side">
+      <section class="panel" aria-labelledby="add-h">
+        <h2 id="add-h">Add stakeholder</h2>
+        <form id="add" class="side">
+          <div class="field"><label for="a-name">Name</label><input id="a-name" placeholder="e.g. Priya Nair" required></div>
+          <div class="field"><label for="a-role">Role</label><input id="a-role" placeholder="e.g. Head of Claims"></div>
+          <div class="two">
+            <div class="field"><label for="a-p">Power 0–100</label><input id="a-p" type="number" min="0" max="100" value="50"></div>
+            <div class="field"><label for="a-i">Interest 0–100</label><input id="a-i" type="number" min="0" max="100" value="50"></div>
+          </div>
+          <button class="btn btn-primary" type="submit">Add to grid</button>
+        </form>
+      </section>
+      <section class="panel" aria-labelledby="sum-h">
+        <h2 id="sum-h">Summary</h2>
+        <div class="counts" id="counts"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="plan-h">
+    <div class="row spread">
+      <h2 id="plan-h">Engagement plan</h2>
+      <div class="row">
+        <button type="button" class="btn" id="copy">Copy as Markdown</button>
+        <button type="button" class="btn" id="sample">Load example</button>
+        <button type="button" class="btn btn-ghost" id="clear">Clear all</button>
+      </div>
+    </div>
+    <div class="field" style="max-width:420px"><label for="project">Project</label><input id="project" placeholder="Project name"></div>
+    <p class="note" id="sample-note">Showing an example: an insurer moving claims handling to a new online portal. The people are fictional. Edit them or clear the grid and add your own.</p>
+    <div class="fallback" id="fallback" hidden><p class="note">Your browser blocked the clipboard. Select the text below and copy it.</p><textarea id="fallback-text" readonly></textarea></div>
+    <div class="plan" id="plan"></div>
+  </section>
+  <footer>Your map is saved in this browser only. Nothing is sent anywhere.</footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY='ba-stakeholders-v1';
+const Q={
+  mc:{name:'Manage closely',sw:'var(--q1)',how:'Involve them in key decisions and resolve their concerns early.',cadence:'Weekly',channel:'1:1s, steering committee, sprint review'},
+  ks:{name:'Keep satisfied',sw:'var(--q2)',how:'Brief them on milestones, risks and decisions that need them. Keep asks short.',cadence:'Monthly and at milestones',channel:'Executive summary, milestone demo'},
+  ki:{name:'Keep informed',sw:'var(--q3)',how:'Share progress often and use them for feedback, testing and change champions.',cadence:'Every sprint',channel:'Sprint review, newsletter, UAT sessions'},
+  mo:{name:'Monitor',sw:'var(--q4)',how:'Light touch. Watch for changes in their influence or interest.',cadence:'Quarterly',channel:'Project page, release notes'}
+};
+const ORDER=['mc','ks','ki','mo'];
+const quad=s=>s.p>=50?(s.i>=50?'mc':'ks'):(s.i>=50?'ki':'mo');
+const SAMPLE={project:'Claims portal migration',people:[
+  {name:'Priya Nair',role:'Head of Claims (sponsor)',p:86,i:82,concern:'Claim cycle time must not rise during cut-over'},
+  {name:'Marcus Webb',role:'CFO',p:92,i:28,concern:'Budget and licence costs'},
+  {name:'Tom Becker',role:'IT Security Lead',p:70,i:58,concern:'Customer data in the new portal'},
+  {name:'Aisha Khan',role:'Compliance Officer',p:66,i:38,concern:'Regulatory audit trail'},
+  {name:'Elena Rossi',role:'Claims Team Lead',p:34,i:88,concern:'Training time for handlers'},
+  {name:'Contact centre agents',role:'End users',p:22,i:70,concern:'More calls during launch'},
+  {name:'Dan Okafor',role:'Vendor delivery manager',p:42,i:62,concern:'Clear, stable requirements'},
+  {name:'Marketing',role:'Brand team',p:30,i:22,concern:'Launch messaging'},
+  {name:'Facilities',role:'Office services',p:12,i:10,concern:'None expected'}
+]};
+let uid=1,sel=null;
+const load=d=>({project:d.project,isSample:d===SAMPLE,people:d.people.map(x=>({id:uid++,...x}))});
+let S=load(SAMPLE);
+try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.people)){S=v;uid=Math.max(0,...v.people.map(x=>x.id))+1;}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const initials=n=>(n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+const clamp=v=>Math.max(0,Math.min(100,Math.round(+v||0)));
+const map=document.getElementById('map');
+
+function renderChips(){
+  map.querySelectorAll('.chip').forEach(c=>c.remove());
+  S.people.forEach(s=>{
+    const c=document.createElement('div');
+    c.className='chip'+(sel===s.id?' sel':'');c.tabIndex=0;c.dataset.id=s.id;c.id='chip-'+s.id;
+    c.setAttribute('role','button');c.setAttribute('aria-label',`${s.name}, power ${s.p}, interest ${s.i}. Use arrow keys to move.`);
+    c.innerHTML=`<span class="av">${esc(initials(s.name))}</span><span class="t">${esc(s.name)}</span>`;
+    place(c,s);map.appendChild(c);
+  });
+}
+function place(c,s){c.style.left=Math.max(4,Math.min(96,s.i))+'%';c.style.top=Math.max(5,Math.min(95,100-s.p))+'%';}
+function renderCounts(){
+  document.getElementById('counts').innerHTML=ORDER.map(k=>`<div class="count"><b>${S.people.filter(s=>quad(s)===k).length}</b><span>${Q[k].name}</span></div>`).join('');
+}
+function renderPlan(){
+  document.getElementById('project').value=S.project||'';
+  document.getElementById('sample-note').hidden=!S.isSample;
+  const el=document.getElementById('plan');
+  if(!S.people.length){el.innerHTML='<p class="note">No stakeholders yet. Add the first one with the form above.</p>';return;}
+  el.innerHTML=ORDER.map(k=>{
+    const ppl=S.people.filter(s=>quad(s)===k).sort((a,b)=>b.p-a.p);if(!ppl.length)return'';
+    return `<div class="group"><h3><span class="sw" style="background:${Q[k].sw}"></span>${Q[k].name}<small>${Q[k].how} · ${Q[k].cadence} · ${Q[k].channel}</small></h3>
+      <div class="scroll"><table><thead><tr><th>Name</th><th>Role</th><th>Power</th><th>Interest</th><th>Key concern</th><th></th></tr></thead><tbody>
+      ${ppl.map(s=>`<tr><td><input id="f-name-${s.id}" data-id="${s.id}" data-f="name" value="${esc(s.name)}" aria-label="Name"></td>
+        <td><input id="f-role-${s.id}" data-id="${s.id}" data-f="role" value="${esc(s.role)}" aria-label="Role"></td>
+        <td><input class="pi num" type="number" min="0" max="100" id="f-p-${s.id}" data-id="${s.id}" data-f="p" value="${s.p}" aria-label="Power"></td>
+        <td><input class="pi num" type="number" min="0" max="100" id="f-i-${s.id}" data-id="${s.id}" data-f="i" value="${s.i}" aria-label="Interest"></td>
+        <td><input id="f-c-${s.id}" data-id="${s.id}" data-f="concern" value="${esc(s.concern||'')}" placeholder="What do they care about?" aria-label="Key concern" style="min-width:220px"></td>
+        <td><button type="button" class="btn btn-ghost" data-del="${s.id}" aria-label="Remove ${esc(s.name)}">Remove</button></td></tr>`).join('')}
+      </tbody></table></div></div>`;}).join('');
+}
+function renderAll(){renderChips();renderCounts();renderPlan();save();}
+
+// dragging
+let drag=null;
+map.addEventListener('pointerdown',e=>{
+  const c=e.target.closest('.chip');if(!c)return;
+  const s=S.people.find(x=>x.id===+c.dataset.id);sel=s.id;
+  map.querySelectorAll('.chip').forEach(x=>x.classList.toggle('sel',x===c));
+  drag={c,s};c.setPointerCapture(e.pointerId);e.preventDefault();c.focus();
+});
+map.addEventListener('pointermove',e=>{
+  if(!drag)return;const r=map.getBoundingClientRect();
+  drag.s.i=clamp((e.clientX-r.left)/r.width*100);drag.s.p=clamp(100-(e.clientY-r.top)/r.height*100);
+  place(drag.c,drag.s);
+});
+const endDrag=()=>{if(!drag)return;drag=null;renderCounts();renderPlan();renderChips();save();};
+map.addEventListener('pointerup',endDrag);map.addEventListener('pointercancel',endDrag);
+map.addEventListener('keydown',e=>{
+  const c=e.target.closest('.chip');if(!c)return;
+  const d={ArrowUp:['p',5],ArrowDown:['p',-5],ArrowRight:['i',5],ArrowLeft:['i',-5]}[e.key];if(!d)return;
+  e.preventDefault();const s=S.people.find(x=>x.id===+c.dataset.id);s[d[0]]=clamp(s[d[0]]+d[1]);sel=s.id;
+  renderAll();document.getElementById('chip-'+s.id).focus();
+});
+// table edits
+const plan=document.getElementById('plan');
+plan.addEventListener('input',e=>{
+  const t=e.target,s=S.people.find(x=>x.id===+t.dataset.id);if(!s)return;
+  s[t.dataset.f]=(t.dataset.f==='p'||t.dataset.f==='i')?clamp(t.value):t.value;
+  renderChips();renderCounts();save();
+});
+plan.addEventListener('change',e=>{if(e.target.dataset.f==='p'||e.target.dataset.f==='i')renderPlan();});
+plan.addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;S.people=S.people.filter(x=>x.id!==+b.dataset.del);renderAll();});
+document.getElementById('project').addEventListener('input',e=>{S.project=e.target.value;save();});
+document.getElementById('add').addEventListener('submit',e=>{
+  e.preventDefault();const n=document.getElementById('a-name');if(!n.value.trim())return;
+  const s={id:uid++,name:n.value.trim(),role:document.getElementById('a-role').value.trim(),p:clamp(document.getElementById('a-p').value),i:clamp(document.getElementById('a-i').value),concern:''};
+  S.people.push(s);S.isSample=false;sel=s.id;renderAll();e.target.reset();toast(`Added ${s.name} to ${Q[quad(s)].name}`);
+});
+document.getElementById('sample').addEventListener('click',()=>{S=load(SAMPLE);sel=null;renderAll();toast('Example loaded');});
+document.getElementById('clear').addEventListener('click',()=>{S={project:'',isSample:false,people:[]};renderAll();});
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
+document.getElementById('copy').addEventListener('click',()=>{
+  const cell=v=>String(v||'').replace(/\|/g,'/');
+  let t=`## Stakeholder engagement plan${S.project?': '+S.project:''}\n`;
+  ORDER.forEach(k=>{const ppl=S.people.filter(s=>quad(s)===k).sort((a,b)=>b.p-a.p);if(!ppl.length)return;
+    t+=`\n### ${Q[k].name}\n${Q[k].how} Cadence: ${Q[k].cadence}. Channels: ${Q[k].channel}.\n\n| Name | Role | Power | Interest | Key concern |\n|---|---|---|---|---|\n`;
+    t+=ppl.map(s=>`| ${cell(s.name)} | ${cell(s.role)} | ${s.p} | ${s.i} | ${cell(s.concern)} |`).join('\n')+'\n';});
+  const fb=()=>{const box=document.getElementById('fallback'),ta=document.getElementById('fallback-text');ta.value=t;box.hidden=false;ta.focus();ta.select();};
+  try{navigator.clipboard.writeText(t).then(()=>{toast('Copied. Paste it into your communication plan.');document.getElementById('fallback').hidden=true;},fb);}catch(e){fb();}
+});
+renderAll();
+</script>
+
+</body>
+</html>
