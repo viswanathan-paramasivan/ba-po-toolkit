@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BA / PO Toolkit</title>
-<meta name="description" content="Four free browser tools for Business Analysts and Product Owners: backlog prioritization, user story quality, stakeholder mapping and requirements traceability.">
+<meta name="description" content="Five free browser tools for Business Analysts and Product Owners: project vision and business case, stakeholder mapping, user story quality, backlog prioritization and requirements traceability.">
 <style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -72,6 +72,8 @@ a.tool h2{font-size:22px}
 a.tool p{margin:0;color:var(--muted)}
 .skill{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .go{font-weight:600;color:var(--accent)}
+a.tool.lead{grid-column:1/-1;border-color:var(--accent)}
+.order{font-size:13px;color:var(--muted);margin:0}
 </style>
 </head>
 <body>
@@ -79,12 +81,14 @@ a.tool p{margin:0;color:var(--muted)}
   <header>
     <div class="eyebrow">Business Analysis · Product Ownership</div>
     <h1>BA / PO Toolkit</h1>
-    <p class="lede">Four browser tools for everyday business analysis and product ownership work. Each one opens with a worked example, runs entirely in your browser, and copies its output straight into Jira, Confluence or Excel.</p>
+    <p class="lede">Five browser tools for everyday business analysis and product ownership work. Each one opens with a worked example, runs entirely in your browser, and copies its output straight into Jira, Confluence or Excel.</p>
   </header>
+  <p class="order">Ordered the way a project runs: from the first conversation with the sponsor to sign-off.</p>
   <div class="tools">
-    <a class="tool" href="backlog-prioritizer.html"><span class="skill">Prioritization</span><h2>Backlog Prioritizer</h2><p>Score backlog items with RICE or WSJF and see how the ranking shifts between the two methods.</p><span class="go">Open tool →</span></a>
-    <a class="tool" href="story-checker.html"><span class="skill">Requirements</span><h2>Story Quality Checker</h2><p>Write user stories with Given / When / Then criteria and check them against INVEST, with vague words flagged.</p><span class="go">Open tool →</span></a>
+    <a class="tool lead" href="vision-builder.html"><span class="skill">Start here · Discovery</span><h2>Project Vision Builder</h2><p>Answer the discovery questions and get a Project Vision and Business Case document, with payback, ROI and a readiness check before sponsor sign-off.</p><span class="go">Open tool →</span></a>
     <a class="tool" href="stakeholder-map.html"><span class="skill">Stakeholder management</span><h2>Stakeholder Power Map</h2><p>Drag stakeholders onto a power / interest grid and get an engagement plan for each quadrant.</p><span class="go">Open tool →</span></a>
+    <a class="tool" href="story-checker.html"><span class="skill">Requirements</span><h2>Story Quality Checker</h2><p>Write user stories with Given / When / Then criteria and check them against INVEST, with vague words flagged.</p><span class="go">Open tool →</span></a>
+    <a class="tool" href="backlog-prioritizer.html"><span class="skill">Prioritization</span><h2>Backlog Prioritizer</h2><p>Score backlog items with RICE or WSJF and see how the ranking shifts between the two methods.</p><span class="go">Open tool →</span></a>
     <a class="tool" href="traceability-matrix.html"><span class="skill">Traceability</span><h2>Traceability Matrix Builder</h2><p>Link requirements to stories and tests, measure coverage, and list the gaps to close before sign-off.</p><span class="go">Open tool →</span></a>
   </div>
   <footer>Built by <a href="https://www.linkedin.com/in/viswanathan-paramasivan" style="color:var(--accent)">Viswanathan Paramasivan</a> with plain HTML, CSS and JavaScript. No sign-up, and no data leaves your browser.</footer>

@@ -1,11 +1,12 @@
 # BA / PO Toolkit
 
-Four browser-based tools for Business Analysts and Product Owners. Each tool opens with a worked example, runs entirely in the browser (no backend, no sign-up), and exports its results as Markdown or CSV for Jira, Confluence, Notion or Excel.
+Five browser-based tools for Business Analysts and Product Owners. Each tool opens with a worked example, runs entirely in the browser (no backend, no sign-up), and exports its results as Markdown or CSV for Jira, Confluence, Notion or Excel.
 
 **Live demo:** https://viswanathan-paramasivan.github.io/ba-po-toolkit/
 
 | Tool | What it does | Practices shown |
 |---|---|---|
+| [Project Vision Builder](vision-builder.html) | Turns discovery answers into a Project Vision and Business Case document with payback, ROI and a readiness check | Vision statement, problem statement, business case, KPIs, scope |
 | [Backlog Prioritizer](backlog-prioritizer.html) | Scores backlog items with RICE or WSJF and compares the ranking between methods | RICE, WSJF (SAFe), data-driven prioritization |
 | [Story Quality Checker](story-checker.html) | Checks user stories and Given/When/Then acceptance criteria against INVEST and flags untestable wording | User stories, BDD / Gherkin, INVEST, Definition of Ready |
 | [Stakeholder Power Map](stakeholder-map.html) | Places stakeholders on a power/interest grid and generates an engagement plan | Stakeholder analysis (BABOK), communication planning |
@@ -13,7 +14,7 @@ Four browser-based tools for Business Analysts and Product Owners. Each tool ope
 
 ## Why I built it
 
-These tools turn the frameworks I use day to day into something you can try in a minute. They show how I approach prioritization, requirement quality, stakeholder engagement and scope coverage.
+These tools follow a project from the sponsor's first brief to sign-off. They turn the frameworks I use day to day into something you can try in a minute. They show how I approach prioritization, requirement quality, stakeholder engagement and scope coverage.
 
 ## Tech
 

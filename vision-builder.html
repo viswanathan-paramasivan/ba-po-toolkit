@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Project Vision Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: guided form on the left, the generated vision document on the right as a paper page */
+
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunken:#ECEEF4; --ink:#171E2C; --muted:#5A6476; --line:#D9DDE7;
+  --accent:#2B42B0; --accent-soft:#E5E8F9; --on-accent:#FFFFFF; --marker:#F2C14E; --marker-ink:#3A2A00;
+  --good:#1D7A4E; --good-soft:#E2F3E9; --warn:#946000; --warn-soft:#FAEFD7; --bad:#B3261E; --bad-soft:#FAE3E1;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+.lede{color:var(--muted);max-width:65ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.formula{font-family:var(--mono);font-size:14px;background:var(--sunken);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.formula b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--sunken);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.score{font-weight:500;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+.fallback textarea{font-family:var(--mono);font-size:12.5px;min-height:140px}
+footer{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:start}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+.side{display:grid;gap:16px;position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+@media (max-width:900px){.side{position:static}}
+.form{display:grid;gap:16px}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:16px;margin:0;display:grid;gap:12px;min-width:0}
+legend{font-family:var(--display);font-weight:600;font-size:17px;padding:0 6px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.field{display:grid;gap:5px;min-width:0}
+.field label{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.grid2{grid-template-columns:minmax(0,1fr)}}
+textarea{resize:vertical;line-height:1.45}
+.tpl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center}
+.tpl .kw{font-family:var(--display);font-weight:600;font-size:14px;white-space:nowrap}
+@media (max-width:520px){.tpl{grid-template-columns:minmax(0,1fr)}}
+.kpi{display:grid;grid-template-columns:1.3fr 1.5fr .8fr .8fr .8fr auto;gap:6px;align-items:center}
+.kpi.head span{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+@media (max-width:640px){.kpi{grid-template-columns:1fr 1fr}.kpi.head{display:none}.kpi .btn{grid-column:span 2}}
+.kpis{display:grid;gap:8px}
+.ready{display:flex;gap:12px;align-items:center}
+.meter{flex:1;height:8px;background:var(--sunken);border-radius:4px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:4px;transition:width .3s}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:13.5px}
+.checks li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;align-items:baseline}
+.checks .i{font-family:var(--mono);font-weight:500;text-align:center}
+.checks .ok .i{color:var(--good)} .checks .warn .i{color:var(--warn)} .checks .bad .i{color:var(--bad)}
+.checks .ok{color:var(--muted)}
+.paper{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:32px 36px;max-height:calc(100vh - 220px);overflow:auto;font-size:14.5px;line-height:1.6}
+@media (max-width:900px){.paper{max-height:none;padding:22px 18px}}
+.paper h1{font-size:26px;margin:0 0 4px}
+.paper .sub{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 16px}
+.paper h3{font-family:var(--display);font-weight:600;font-size:17px;margin:26px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.paper p{margin:0 0 8px;max-width:68ch}
+.paper ul{margin:0 0 8px;padding-left:20px}
+.paper table{font-size:13.5px;margin:4px 0 8px}
+.paper td,.paper th{padding:6px 8px}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:6px}
+.meta dt{color:var(--muted)} .meta dd{margin:0}
+.vision{border-left:4px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;font-size:15.5px;margin:4px 0 8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+.two b{font-size:13px;display:block;margin-bottom:2px}
+.money{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 8px}
+@media (max-width:560px){.money{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.money div{border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.money span{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.money b{font-family:var(--display);font-size:18px;font-variant-numeric:tabular-nums}
+.gap{color:var(--warn);background:var(--warn-soft);padding:0 4px;border-radius:3px;font-style:italic}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><a href="index.html" style="color:inherit">← BA / PO Toolkit</a> · Discovery</div>
+    <h1>Project Vision Builder</h1>
+    <p class="lede">Answer the discovery questions on the left and the Project Vision and Business Case document writes itself on the right. A readiness check shows what is still missing before you take it to the sponsor for sign-off.</p>
+  </header>
+
+  <div class="row">
+    <span class="note">Examples:</span>
+    <button type="button" class="btn" data-load="example">Next-Gen Freight Forwarding System</button>
+    <button type="button" class="btn btn-ghost" data-load="blank">Start blank</button>
+  </div>
+  <p class="note" id="sample-note">Showing a practice scenario: a global logistics company replacing CargoWise One. People and figures are illustrative.</p>
+
+  <div class="cols">
+    <div class="form" id="form">
+      <fieldset><legend>Project details</legend>
+        <div class="grid2">
+          <div class="field"><label for="name">Project or product name</label><input id="name" data-k="name"></div>
+          <div class="field"><label for="org">Organisation</label><input id="org" data-k="org"></div>
+          <div class="field"><label for="sponsor">Sponsor</label><input id="sponsor" data-k="sponsor" placeholder="Name, role"></div>
+          <div class="field"><label for="author">Prepared by</label><input id="author" data-k="author" placeholder="Name, role"></div>
+          <div class="field"><label for="version">Version</label><input id="version" data-k="version" placeholder="0.1 Draft"></div>
+          <div class="field"><label for="date">Date</label><input id="date" type="date" data-k="date"></div>
+        </div>
+      </fieldset>
+
+      <fieldset><legend>1. Background</legend>
+        <p class="hint">What is the situation today, and why is this coming up now?</p>
+        <textarea id="background" data-k="background" rows="3"></textarea>
+      </fieldset>
+
+      <fieldset><legend>2. Problem statement</legend>
+        <div class="tpl">
+          <label class="kw" for="problem">The problem of</label><input id="problem" data-k="problem" placeholder="what goes wrong today">
+          <label class="kw" for="affects">affects</label><input id="affects" data-k="affects" placeholder="who suffers from it">
+          <label class="kw" for="impact">the impact is</label><textarea id="impact" data-k="impact" rows="2" placeholder="cost, delay, risk, lost revenue"></textarea>
+          <label class="kw" for="success">a good solution would</label><textarea id="success" data-k="success" rows="2" placeholder="what changes when it is fixed"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset><legend>3. Vision statement</legend>
+        <p class="hint">The product's elevator pitch: who it is for, what it does, and why it beats the alternative.</p>
+        <div class="tpl">
+          <label class="kw" for="target">For</label><input id="target" data-k="target" placeholder="target users or customers">
+          <label class="kw" for="need">who</label><input id="need" data-k="need" placeholder="their need">
+          <label class="kw" for="category">the product is a</label><input id="category" data-k="category" placeholder="product category">
+          <label class="kw" for="keyBenefit">that</label><input id="keyBenefit" data-k="keyBenefit" placeholder="key benefit">
+          <label class="kw" for="alternative">Unlike</label><input id="alternative" data-k="alternative" placeholder="current system or competitor">
+          <label class="kw" for="differentiator">our product</label><input id="differentiator" data-k="differentiator" placeholder="what makes it different">
+        </div>
+      </fieldset>
+
+      <fieldset><legend>4. Business objectives and KPIs</legend>
+        <p class="hint">Each objective needs a measure, today's baseline and a target. These are how the project will be judged.</p>
+        <div class="kpi head"><span>Objective</span><span>Measure</span><span>Baseline</span><span>Target</span><span>By</span><span></span></div>
+        <div class="kpis" id="kpis"></div>
+        <button type="button" class="btn btn-primary" id="add-kpi" style="justify-self:start">Add KPI</button>
+      </fieldset>
+
+      <fieldset><legend>5. Scope</legend>
+        <p class="hint">One item per line. Writing down what is out of scope prevents scope creep later.</p>
+        <div class="grid2">
+          <div class="field"><label for="inScope">In scope</label><textarea id="inScope" data-k="inScope" rows="7"></textarea></div>
+          <div class="field"><label for="outScope">Out of scope</label><textarea id="outScope" data-k="outScope" rows="7"></textarea></div>
+        </div>
+      </fieldset>
+
+      <fieldset><legend>6. Key stakeholders</legend>
+        <p class="hint">One per line, as Name – role. Use your Stakeholder Power Map for the full list.</p>
+        <textarea id="stakeholders" data-k="stakeholders" rows="5"></textarea>
+      </fieldset>
+
+      <fieldset><legend>7. Business case</legend>
+        <div class="grid2">
+          <div class="field"><label for="currency">Currency</label>
+            <select id="currency" data-k="currency"><option>EUR</option><option>USD</option><option>GBP</option><option>INR</option><option>DKK</option><option>AED</option><option>SGD</option></select></div>
+          <div class="field"><label for="years">ROI period (years)</label><select id="years" data-k="years"><option>3</option><option>5</option></select></div>
+          <div class="field"><label for="cost">Total project cost</label><input id="cost" type="number" min="0" step="100000" data-k="cost"></div>
+          <div class="field"><label for="annualBenefit">Expected benefit per year</label><input id="annualBenefit" type="number" min="0" step="100000" data-k="annualBenefit"></div>
+        </div>
+        <div class="field"><label for="benefitNotes">Where the benefit comes from</label><textarea id="benefitNotes" data-k="benefitNotes" rows="2"></textarea></div>
+      </fieldset>
+
+      <fieldset><legend>8. Constraints, assumptions and risks</legend>
+        <p class="hint">One per line.</p>
+        <div class="field"><label for="constraints">Constraints</label><textarea id="constraints" data-k="constraints" rows="3"></textarea></div>
+        <div class="field"><label for="assumptions">Assumptions</label><textarea id="assumptions" data-k="assumptions" rows="3"></textarea></div>
+        <div class="field"><label for="risks">Risks</label><textarea id="risks" data-k="risks" rows="3"></textarea></div>
+      </fieldset>
+
+      <fieldset><legend>9. Key milestones</legend>
+        <p class="hint">One per line, as Milestone – target date.</p>
+        <textarea id="milestones" data-k="milestones" rows="4"></textarea>
+      </fieldset>
+
+      <fieldset><legend>10. Approval</legend>
+        <p class="hint">Who signs off this vision? One per line, as Name – role.</p>
+        <textarea id="approvers" data-k="approvers" rows="3"></textarea>
+      </fieldset>
+    </div>
+
+    <div class="side">
+      <section class="panel" aria-labelledby="rd-h">
+        <div class="row spread"><h2 id="rd-h">Readiness</h2><span class="note" id="rd-score"></span></div>
+        <div class="ready"><div class="meter"><i id="rd-bar"></i></div></div>
+        <ul class="checks" id="checks"></ul>
+      </section>
+      <section class="panel" aria-labelledby="doc-h">
+        <div class="row spread"><h2 id="doc-h">Vision document</h2>
+          <button type="button" class="btn" id="copy">Copy as Markdown</button></div>
+        <div class="fallback" id="fallback" hidden><p class="note">Your browser blocked the clipboard. Select the text below and copy it.</p><textarea id="fallback-text" readonly></textarea></div>
+        <article class="paper" id="paper" aria-live="polite"></article>
+      </section>
+    </div>
+  </div>
+  <footer>Your draft is saved in this browser only. Nothing is sent anywhere. Paste the Markdown into Confluence, Notion or Word, or into a Claude Doc.</footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY='ba-vision-v1';
+const EXAMPLE={
+  name:'Next-Gen Freight Forwarding System',org:'Global logistics company (practice scenario)',
+  sponsor:'Mette Kristensen, Chief Digital Officer',author:'Viswanathan Paramasivan, Business Analyst',version:'0.1 Draft',date:'2026-10-22',
+  background:'The company runs freight forwarding in more than 80 countries on CargoWise One (CW1). The CW1 licence is due for renewal in Q3 2028. The business wants a platform it owns, built around its own processes, and able to give customers and carriers modern digital access.',
+  problem:'re-keying shipment data across CW1, email and spreadsheets',
+  affects:'forwarding operators, customs teams and customers',
+  impact:'bookings take about 12 minutes per shipment, 4% of customs filings are rejected, and customers have no real-time view of their cargo',
+  success:'capture shipment data once, file customs declarations automatically and give customers live tracking',
+  target:'freight forwarding operators and their customers',need:'need to book, clear and track shipments accurately across air, sea and road',
+  category:'cloud-based freight forwarding platform',keyBenefit:'manages the full shipment lifecycle, from quote to invoice, in one system',
+  alternative:'CargoWise One',differentiator:'is owned by the company, fits its own processes, and shares shipment data with customers and carriers through open APIs',
+  kpis:[
+    {obj:'Faster bookings',metric:'Average booking time per shipment',base:'12 min',target:'6 min',by:'Dec 2028'},
+    {obj:'Compliant customs filing',metric:'Customs filing rejection rate',base:'4%',target:'Under 1%',by:'Dec 2028'},
+    {obj:'Lower running cost',metric:'Annual platform licence cost',base:'€6.0M',target:'€4.2M',by:'2029'},
+    {obj:'Customer self-service',metric:'Share of bookings made in the customer portal',base:'10%',target:'40%',by:'2029'}],
+  inScope:'Quotation and booking for air, sea and road\nShipment tracking and milestone events\nExport and import customs declarations\nShipping documents (bill of lading, air waybill, commercial invoice)\nBilling and invoicing\nCustomer portal for booking and tracking\nCarrier EDI and API integrations\nMigration of open shipments from CW1',
+  outScope:'Warehouse management (planned for phase 2)\nTransport management for the company\'s own trucks\nReplacing the corporate finance (ERP) system\nMobile app for drivers',
+  stakeholders:'Mette Kristensen – Chief Digital Officer (sponsor)\nHenrik Nielsen – Head of Air & Sea Operations\nRajesh Iyer – Customs & Compliance Manager\nLars Jørgensen – CFO\nSofia Lindqvist – IT Security & Data Protection Officer\nPriya Raman – Forwarding operator (user representative)',
+  currency:'EUR',years:'3',cost:12000000,annualBenefit:4500000,
+  benefitNotes:'€1.8M lower licence costs, €2.1M operator time saved through faster bookings, and €0.6M fewer customs penalties and rework.',
+  constraints:'Go-live before the CW1 licence renewal in Q3 2028\nBudget capped at €12M\nMust comply with EU ICS2 customs rules and GDPR\nMust run 24/7 across time zones',
+  assumptions:'Customs authority test APIs are available by Q2 2027\nKey users can give 20% of their time to workshops and UAT\nCW1 data can be exported in a usable format',
+  risks:'Poor CW1 data quality delays migration and go-live\nCarrier integration testing depends on partners\' timelines\nOperators resist the change if new screens slow them down',
+  milestones:'Discovery complete – Jan 2027\nMVP live: sea freight in one pilot country – Dec 2027\nAir and road freight live – Apr 2028\nGlobal rollout complete – Sep 2028',
+  approvers:'Mette Kristensen – Chief Digital Officer (sponsor)\nLars Jørgensen – CFO\nHenrik Nielsen – Head of Air & Sea Operations'
+};
+const BLANK={name:'',org:'',sponsor:'',author:'',version:'0.1 Draft',date:new Date().toISOString().slice(0,10),background:'',problem:'',affects:'',impact:'',success:'',target:'',need:'',category:'',keyBenefit:'',alternative:'',differentiator:'',kpis:[{obj:'',metric:'',base:'',target:'',by:''}],inScope:'',outScope:'',stakeholders:'',currency:'EUR',years:'3',cost:'',annualBenefit:'',benefitNotes:'',constraints:'',assumptions:'',risks:'',milestones:'',approvers:''};
+const clone=o=>JSON.parse(JSON.stringify(o));
+let S=clone(EXAMPLE),isSample=true;
+try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&v.S&&Array.isArray(v.S.kpis)){S=v.S;isSample=!!v.isSample;}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({S,isSample}))}catch(e){}};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const lines=s=>String(s||'').split('\n').map(x=>x.trim()).filter(Boolean);
+const pair=l=>{const m=l.split(/\s+[–—-]\s+|\s*\|\s*/);return[m[0]||'',m.slice(1).join(' – ')];};
+const art=w=>/^[aeiou]/i.test(w||'')?'an':'a';
+const V=(v,ph)=>v&&String(v).trim()?esc(String(v).trim()):`<span class="gap">${ph}</span>`;
+const strip=s=>String(s||'').trim().replace(/[.\s]+$/,'');
+function money(n){const v=+n;if(!v&&v!==0)return'–';try{return new Intl.NumberFormat(undefined,{style:'currency',currency:S.currency,maximumFractionDigits:0,notation:v>=1e6?'compact':'standard'}).format(v);}catch(e){return S.currency+' '+v.toLocaleString();}}
+function finance(){const c=+S.cost,b=+S.annualBenefit,y=+S.years||3;if(!(c>0&&b>0))return null;
+  return{payback:c/b,roi:(b*y-c)/c*100,net:b*y-c,y};}
+
+function problemText(){return`The problem of ${strip(S.problem)} affects ${strip(S.affects)}. The impact is that ${strip(S.impact)}. A successful solution would ${strip(S.success)}.`;}
+function visionText(){const c=strip(S.category);let t=`For ${strip(S.target)} who ${strip(S.need)}, the ${strip(S.name)} is ${art(c)} ${c} that ${strip(S.keyBenefit)}.`;
+  if(S.alternative.trim())t+=` Unlike ${strip(S.alternative)}, our product ${strip(S.differentiator)}.`;return t;}
+
+const VAGUE=/\b(world[- ]class|best[- ]in[- ]class|seamless(ly)?|user[- ]friendly|cutting[- ]edge|state[- ]of[- ]the[- ]art|robust|synergy|leverage|optimal|improve[sd]?|better|faster|enhance[sd]?)\b/gi;
+function checks(){
+  const r=[],f=finance();
+  const has=k=>String(S[k]||'').trim().length>0;
+  r.push(has('name')&&has('sponsor')?['ok','Project name and sponsor set']:['bad','Add the project name and the sponsor who owns it']);
+  r.push(has('background')?['ok','Background explains why now']:['warn','Add background: why is this coming up now?']);
+  const p=['problem','affects','impact','success'].filter(k=>!has(k)).length;
+  r.push(p?['bad',`Problem statement is missing ${p} of 4 parts`]:['ok','Problem statement is complete']);
+  const v=['target','need','category','keyBenefit'].filter(k=>!has(k)).length;
+  r.push(v?['bad',`Vision statement is missing ${v} of its core parts`]:has('alternative')&&has('differentiator')?['ok','Vision says who it is for and why it beats the alternative']:['warn','Vision has no "unlike" comparison. Say why this beats the current option.']);
+  const k=S.kpis.filter(x=>x.obj||x.metric),kOk=k.filter(x=>x.metric&&x.base&&x.target&&x.by).length;
+  r.push(!k.length?['bad','Add at least one measurable KPI']:kOk<k.length?['warn',`${k.length-kOk} KPI${k.length-kOk>1?'s are':' is'} missing a baseline, target or date`]:['ok',`${k.length} KPIs with baseline, target and date`]);
+  const vag=[...new Set(([S.problem,S.impact,S.success,S.keyBenefit,S.differentiator].join(' ').match(VAGUE)||[]).map(w=>w.toLowerCase()))];
+  if(vag.length)r.push(['warn',`Vague words: ${vag.map(w=>'"'+w+'"').join(', ')}. Replace them with numbers.`]);
+  r.push(!lines(S.inScope).length?['bad','List what is in scope']:!lines(S.outScope).length?['warn','Nothing is marked out of scope. Name at least one exclusion.']:['ok','In-scope and out-of-scope items listed']);
+  r.push(lines(S.stakeholders).length?['ok','Key stakeholders named']:['warn','Name the key stakeholders']);
+  r.push(f?['ok',`Payback in ${f.payback.toFixed(1)} years`]:['bad','Enter the total cost and the yearly benefit']);
+  r.push(lines(S.risks).length&&lines(S.assumptions).length?['ok','Risks and assumptions recorded']:['warn','Record at least one risk and one assumption']);
+  r.push(lines(S.milestones).length?['ok','Milestones set']:['warn','Add key milestones with target dates']);
+  r.push(lines(S.approvers).length?['ok','Approvers named']:['bad','Name who will sign off the vision']);
+  return r;
+}
+function list(s,ph){const l=lines(s);return l.length?`<ul>${l.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:`<p><span class="gap">${ph}</span></p>`;}
+function renderDoc(){
+  const f=finance(),k=S.kpis.filter(x=>x.obj||x.metric||x.target);
+  const pr=['problem','affects','impact','success'].every(x=>String(S[x]||'').trim());
+  const vi=['target','need','category','keyBenefit'].every(x=>String(S[x]||'').trim());
+  const ms=lines(S.milestones).map(pair),ap=lines(S.approvers).map(pair);
+  document.getElementById('paper').innerHTML=`
+  <p class="sub">Project Vision and Business Case</p>
+  <h1>${V(S.name,'Project name')}</h1>
+  <dl class="meta"><dt>Organisation</dt><dd>${V(S.org,'Organisation')}</dd><dt>Sponsor</dt><dd>${V(S.sponsor,'Sponsor')}</dd><dt>Prepared by</dt><dd>${V(S.author,'Author')}</dd><dt>Version</dt><dd>${V(S.version,'Version')} · ${V(S.date,'Date')}</dd></dl>
+  <h3>1. Background</h3><p>${V(S.background,'Why this project, and why now?')}</p>
+  <h3>2. Problem statement</h3><p>${pr?esc(problemText()):'<span class="gap">Complete the four parts of the problem statement.</span>'}</p>
+  <h3>3. Vision statement</h3>${vi?`<div class="vision">${esc(visionText())}</div>`:'<p><span class="gap">Complete the vision statement.</span></p>'}
+  <h3>4. Business objectives and KPIs</h3>
+  ${k.length?`<div class="scroll"><table><thead><tr><th>Objective</th><th>Measure</th><th>Baseline</th><th>Target</th><th>By</th></tr></thead><tbody>${k.map(x=>`<tr><td>${V(x.obj,'?')}</td><td>${V(x.metric,'?')}</td><td class="num">${V(x.base,'?')}</td><td class="num">${V(x.target,'?')}</td><td>${V(x.by,'?')}</td></tr>`).join('')}</tbody></table></div>`:'<p><span class="gap">Add measurable objectives.</span></p>'}
+  <h3>5. Scope</h3><div class="two"><div><b>In scope</b>${list(S.inScope,'What is included?')}</div><div><b>Out of scope</b>${list(S.outScope,'What is excluded?')}</div></div>
+  <h3>6. Key stakeholders</h3>${list(S.stakeholders,'Who is involved?')}
+  <h3>7. Business case</h3>
+  ${f?`<div class="money"><div><span>Total cost</span><b>${money(S.cost)}</b></div><div><span>Benefit / year</span><b>${money(S.annualBenefit)}</b></div><div><span>Payback</span><b>${f.payback.toFixed(1)} yrs</b></div><div><span>${f.y}-year ROI</span><b>${f.roi.toFixed(0)}%</b></div></div>
+   <p>Over ${f.y} years the project returns ${money(S.annualBenefit*f.y)} against a cost of ${money(S.cost)}, a net ${f.net>=0?'gain':'loss'} of ${money(Math.abs(f.net))}.${S.benefitNotes.trim()?' '+esc(strip(S.benefitNotes))+'.':''}</p>`:'<p><span class="gap">Enter the cost and yearly benefit to calculate payback and ROI.</span></p>'}
+  <h3>8. Constraints, assumptions and risks</h3>
+  <p><b>Constraints</b></p>${list(S.constraints,'Fixed limits: budget, dates, regulation')}
+  <p><b>Assumptions</b></p>${list(S.assumptions,'What we believe is true but have not confirmed')}
+  <p><b>Risks</b></p>${list(S.risks,'What could go wrong')}
+  <h3>9. Key milestones</h3>
+  ${ms.length?`<div class="scroll"><table><thead><tr><th>Milestone</th><th>Target date</th></tr></thead><tbody>${ms.map(([a,b])=>`<tr><td>${esc(a)}</td><td>${V(b,'date?')}</td></tr>`).join('')}</tbody></table></div>`:'<p><span class="gap">Add milestones.</span></p>'}
+  <h3>10. Approval</h3>
+  ${ap.length?`<div class="scroll"><table><thead><tr><th>Name</th><th>Role</th><th>Signature</th><th>Date</th></tr></thead><tbody>${ap.map(([a,b])=>`<tr><td>${esc(a)}</td><td>${esc(b)}</td><td></td><td></td></tr>`).join('')}</tbody></table></div>`:'<p><span class="gap">Name the approvers.</span></p>'}`;
+}
+function renderChecks(){
+  const r=checks(),ok=r.filter(x=>x[0]==='ok').length,bad=r.filter(x=>x[0]==='bad').length,pct=Math.round(ok/r.length*100);
+  const bar=document.getElementById('rd-bar');bar.style.width=pct+'%';bar.style.background=bad?'var(--bad)':pct===100?'var(--good)':'var(--warn)';
+  document.getElementById('rd-score').textContent=bad?`${ok} of ${r.length} checks pass · not ready`:pct===100?'Ready for sponsor sign-off':`${ok} of ${r.length} checks pass · nearly ready`;
+  const order={bad:0,warn:1,ok:2};
+  document.getElementById('checks').innerHTML=r.sort((a,b)=>order[a[0]]-order[b[0]]).map(([s,m])=>`<li class="${s}"><span class="i">${s==='ok'?'✓':s==='warn'?'!':'✕'}</span><span>${esc(m)}</span></li>`).join('');
+}
+function renderKpis(){
+  document.getElementById('kpis').innerHTML=S.kpis.map((x,i)=>`<div class="kpi">
+    <input id="k${i}-obj" data-i="${i}" data-f="obj" value="${esc(x.obj)}" placeholder="Objective" aria-label="Objective ${i+1}">
+    <input id="k${i}-metric" data-i="${i}" data-f="metric" value="${esc(x.metric)}" placeholder="Measure" aria-label="Measure ${i+1}">
+    <input id="k${i}-base" data-i="${i}" data-f="base" value="${esc(x.base)}" placeholder="Today" aria-label="Baseline ${i+1}">
+    <input id="k${i}-target" data-i="${i}" data-f="target" value="${esc(x.target)}" placeholder="Target" aria-label="Target ${i+1}">
+    <input id="k${i}-by" data-i="${i}" data-f="by" value="${esc(x.by)}" placeholder="When" aria-label="Target date ${i+1}">
+    <button type="button" class="btn btn-ghost" data-rm="${i}" aria-label="Remove KPI ${i+1}">Remove</button></div>`).join('');
+}
+function update(){renderDoc();renderChecks();document.getElementById('sample-note').hidden=!isSample;save();}
+function fill(){document.querySelectorAll('[data-k]').forEach(el=>el.value=S[el.dataset.k]??'');renderKpis();update();}
+
+document.getElementById('form').addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.k){S[t.dataset.k]=t.value;}
+  else if(t.dataset.i!=null){S.kpis[+t.dataset.i][t.dataset.f]=t.value;}
+  else return;
+  isSample=false;update();
+});
+document.getElementById('kpis').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;S.kpis.splice(+b.dataset.rm,1);renderKpis();update();});
+document.getElementById('add-kpi').addEventListener('click',()=>{S.kpis.push({obj:'',metric:'',base:'',target:'',by:''});renderKpis();update();document.getElementById(`k${S.kpis.length-1}-obj`).focus();});
+document.querySelectorAll('[data-load]').forEach(b=>b.addEventListener('click',()=>{const ex=b.dataset.load==='example';S=clone(ex?EXAMPLE:BLANK);isSample=ex;fill();toast(ex?'Example loaded':'Blank template ready');}));
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
+function markdown(){
+  const f=finance(),k=S.kpis.filter(x=>x.obj||x.metric||x.target),c=v=>String(v||'').replace(/\|/g,'/');
+  const ul=s=>lines(s).map(x=>`- ${x}`).join('\n')||'- _To be completed_';
+  let t=`# ${S.name||'Project name'}\n\n**Project Vision and Business Case**\n\n| | |\n|---|---|\n| Organisation | ${c(S.org)} |\n| Sponsor | ${c(S.sponsor)} |\n| Prepared by | ${c(S.author)} |\n| Version | ${c(S.version)} · ${c(S.date)} |\n`;
+  t+=`\n## 1. Background\n\n${S.background.trim()||'_To be completed_'}\n`;
+  t+=`\n## 2. Problem statement\n\n${['problem','affects','impact','success'].every(x=>String(S[x]).trim())?problemText():'_To be completed_'}\n`;
+  t+=`\n## 3. Vision statement\n\n> ${['target','need','category','keyBenefit'].every(x=>String(S[x]).trim())?visionText():'_To be completed_'}\n`;
+  t+=`\n## 4. Business objectives and KPIs\n\n| Objective | Measure | Baseline | Target | By |\n|---|---|---|---|---|\n${k.map(x=>`| ${c(x.obj)} | ${c(x.metric)} | ${c(x.base)} | ${c(x.target)} | ${c(x.by)} |`).join('\n')}\n`;
+  t+=`\n## 5. Scope\n\n**In scope**\n\n${ul(S.inScope)}\n\n**Out of scope**\n\n${ul(S.outScope)}\n`;
+  t+=`\n## 6. Key stakeholders\n\n${ul(S.stakeholders)}\n`;
+  t+=`\n## 7. Business case\n\n`+(f?`| Total cost | Benefit per year | Payback | ${f.y}-year ROI |\n|---|---|---|---|\n| ${money(S.cost)} | ${money(S.annualBenefit)} | ${f.payback.toFixed(1)} years | ${f.roi.toFixed(0)}% |\n\nOver ${f.y} years the project returns ${money(S.annualBenefit*f.y)} against a cost of ${money(S.cost)}, a net ${f.net>=0?'gain':'loss'} of ${money(Math.abs(f.net))}.${S.benefitNotes.trim()?' '+strip(S.benefitNotes)+'.':''}\n`:'_To be completed_\n');
+  t+=`\n## 8. Constraints, assumptions and risks\n\n**Constraints**\n\n${ul(S.constraints)}\n\n**Assumptions**\n\n${ul(S.assumptions)}\n\n**Risks**\n\n${ul(S.risks)}\n`;
+  t+=`\n## 9. Key milestones\n\n| Milestone | Target date |\n|---|---|\n${lines(S.milestones).map(pair).map(([a,b])=>`| ${c(a)} | ${c(b)} |`).join('\n')}\n`;
+  t+=`\n## 10. Approval\n\n| Name | Role | Signature | Date |\n|---|---|---|---|\n${lines(S.approvers).map(pair).map(([a,b])=>`| ${c(a)} | ${c(b)} | | |`).join('\n')}\n`;
+  return t;
+}
+document.getElementById('copy').addEventListener('click',()=>{
+  const text=markdown();
+  const fb=()=>{const box=document.getElementById('fallback'),ta=document.getElementById('fallback-text');ta.value=text;box.hidden=false;ta.focus();ta.select();};
+  try{navigator.clipboard.writeText(text).then(()=>{toast('Copied. Paste it into Confluence, Notion or Word.');document.getElementById('fallback').hidden=true;},fb);}catch(e){fb();}
+});
+fill();
+</script>
+
+</body>
+</html>
