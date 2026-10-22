@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>As-Is Landscape Mapper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: coverage tiles, then five views — setup, departments, system modules, processes, coverage & cross-reference */
+
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunken:#ECEEF4; --ink:#171E2C; --muted:#5A6476; --line:#D9DDE7;
+  --accent:#2B42B0; --accent-soft:#E5E8F9; --on-accent:#FFFFFF; --marker:#F2C14E; --marker-ink:#3A2A00;
+  --good:#1D7A4E; --good-soft:#E2F3E9; --warn:#946000; --warn-soft:#FAEFD7; --bad:#B3261E; --bad-soft:#FAE3E1;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141C; --surface:#181E29; --sunken:#131821; --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3241;
+  --accent:#8C9DFF; --accent-soft:#222A50; --on-accent:#0D1330; --marker:#E5B744; --marker-ink:#2A1E00;
+  --good:#5CC48D; --good-soft:#15301F; --warn:#E2AD4E; --warn-soft:#382A10; --bad:#F08A80; --bad-soft:#3C1C1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+.lede{color:var(--muted);max-width:65ch;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{color:var(--on-accent);filter:brightness(1.08)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.formula{font-family:var(--mono);font-size:14px;background:var(--sunken);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.formula b{color:var(--accent);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--sunken);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.score{font-weight:500;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+.fallback textarea{font-family:var(--mono);font-size:12.5px;min-height:140px}
+footer{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:820px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:5px;min-width:0}
+.stat span{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stat b{font-family:var(--display);font-weight:800;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+.stat small{font-size:12px;color:var(--muted)}
+.stat .meter{height:5px;background:var(--sunken);border-radius:3px;overflow:hidden}
+.stat .meter i{display:block;height:100%;background:var(--accent)}
+.stat.alert b{color:var(--bad)}
+.tabsrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+.seg{flex-wrap:wrap}
+.split{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:820px){.split{grid-template-columns:minmax(0,1fr)}}
+.nav{display:grid;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.nav h4{margin:6px 0 2px;font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.nav ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.nav button.item{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 8px;border-radius:6px;font-size:14px}
+.nav button.item.child{padding-left:22px;font-size:13.5px}
+.nav button.item:hover{background:var(--sunken)}
+.nav button.item[aria-current="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav button.item:focus-visible{outline:2px solid var(--accent)}
+.nav .add{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.st{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:4px;white-space:nowrap;font-weight:500}
+.s0{background:var(--sunken);color:var(--muted)} .s1{background:var(--accent-soft);color:var(--accent)}
+.s2{background:var(--warn-soft);color:var(--warn)} .s3{background:var(--good-soft);color:var(--good)}
+.ed{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.field{display:grid;gap:5px;min-width:0}
+.field label{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.field .tip{font-size:12.5px;color:var(--muted)}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.g2,.g3,.g4{grid-template-columns:minmax(0,1fr)}}
+textarea{resize:vertical;line-height:1.45}
+.derived{background:var(--sunken);border-radius:8px;padding:12px 14px;display:grid;gap:6px;font-size:13.5px}
+.derived b{font-weight:600}
+.derived .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px}
+.chip button{all:unset;cursor:pointer;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;color:var(--muted);font-size:12px}
+.chip button:hover{background:var(--bad-soft);color:var(--bad)}
+.chip button:focus-visible{outline:2px solid var(--accent)}
+.chip .cnt{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.addrow{display:flex;gap:8px}
+.addrow input{max-width:280px}
+.steps td{padding:5px 6px;vertical-align:top}
+.steps input,.steps select{font-size:13px;padding:5px 6px}
+.steps .n{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:11px}
+.steps tr.out td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+.steps input.w-step{min-width:180px} .steps input.w-mid{min-width:115px} .steps input.w-min{width:60px;min-width:60px}
+.steps select{min-width:150px}
+.mv{display:flex;gap:2px} .mv .btn{padding:4px 7px;font-size:12px}
+.sum{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13.5px;color:var(--muted);padding:10px 12px;background:var(--sunken);border-radius:8px}
+.sum b{color:var(--ink);font-variant-numeric:tabular-nums}
+.mx th.v{writing-mode:vertical-rl;transform:rotate(180deg);height:130px;text-align:left;padding:8px 4px;white-space:nowrap}
+.mx th.grp{text-align:center;border-left:1px solid var(--line)}
+.mx td.c{text-align:center;border-left:1px solid var(--line);font-family:var(--mono);font-variant-numeric:tabular-nums;min-width:34px}
+.mx td.c.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.mx td.c.out{background:var(--warn-soft);color:var(--warn);font-weight:600}
+.mx td.pn{white-space:nowrap;font-weight:600}
+.mx tr.blank td.pn{color:var(--bad)}
+.mx td.pn.child{padding-left:22px;font-weight:500}
+.gaps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.gaps{grid-template-columns:minmax(0,1fr)}}
+.gap{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;gap:6px;align-content:start}
+.gap h3{margin:0;font-family:var(--display);font-weight:600;font-size:15px;display:flex;justify-content:space-between;gap:8px}
+.gap h3 .cnt{font-family:var(--mono);font-size:12px;color:var(--bad)}
+.gap h3 .cnt.ok{color:var(--good)}
+.gap ul{margin:0;padding-left:18px;font-size:13.5px;display:grid;gap:2px}
+.gap p{margin:0;font-size:13px;color:var(--muted)}
+.empty{color:var(--muted);font-size:14px;padding:20px;text-align:center}
+.view-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:grid;gap:16px}
+.tpl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.tpl{grid-template-columns:minmax(0,1fr)}}
+.tpl button{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:4px}
+.tpl button:hover{border-color:var(--accent)}
+.tpl button:focus-visible{outline:2px solid var(--accent)}
+.tpl b{font-family:var(--display);font-weight:600;font-size:16px}
+.tpl span{font-size:13px;color:var(--muted)}
+.confirm{border:1px solid var(--bad);background:var(--bad-soft);border-radius:8px;padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><a href="index.html" style="color:inherit">← BA / PO Toolkit</a> · Current state analysis</div>
+    <h1>As-Is Landscape Mapper</h1>
+    <p class="lede">Document today's organisation and systems for any industry. Define your own departments and system modules, map how each process really runs, and track coverage, so no department goes un-interviewed and no module goes unreviewed.</p>
+  </header>
+  <p class="note" id="sample-note">Showing a practice scenario: a freight forwarder running a CargoWise One–style system. Departments, modules, figures and pain points are illustrative. Start from a blank template in Setup to use it for any domain.</p>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="tabsrow">
+    <div class="seg" role="group" aria-label="View">
+      <button type="button" data-tab="setup">Setup</button>
+      <button type="button" data-tab="depts">Departments</button>
+      <button type="button" data-tab="modules">System modules</button>
+      <button type="button" data-tab="processes">Processes</button>
+      <button type="button" data-tab="coverage">Coverage &amp; cross-reference</button>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-primary" id="copy-md">Copy full As-Is (Markdown)</button>
+      <button type="button" class="btn" id="copy-csv">Copy steps (CSV)</button>
+    </div>
+  </div>
+  <div class="fallback" id="fallback" hidden><p class="note">Your browser blocked the clipboard. Select the text below and copy it.</p><textarea id="fallback-text" readonly></textarea></div>
+
+  <section id="view"></section>
+  <footer>Your analysis is saved in this browser only. Nothing is sent anywhere.</footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY='ba-asis-v2';
+const DEPT_ST=['Not started','Scheduled','Interviewed','Validated'];
+const MOD_ST=['Not started','Walkthrough done','Documented','Validated'];
+const DQ=['Unknown','Good','Fair','Poor'];
+const ASSESS=['To be decided','Retain','Improve','Redesign','Retire'];
+const GENERIC={areas:['Master data','Sales and customers','Operations','Finance','Reporting','Integration','Other'],channels:['Email','Excel','Phone','Paper','External portal','Other external']};
+
+const D=(id,name,parent,head,headcount,responsibilities,status,date='',notes='')=>({id,name,parent,head,headcount,responsibilities,status,date,notes});
+const M=(id,area,name,purpose,functions,entities,users,volume,integrations,custom,pains,dq,assess,status)=>({id,area,name,purpose,functions,entities,users,volume,integrations,custom,pains,dq,assess,status,notes:''});
+const ST=(dept,step,actor,module,input,output,mins,pain='')=>({dept,step,actor,module,input,output,mins,pain});
+const EXAMPLE={
+ config:{areas:['Master data','Rating','Forwarding','Equipment','Customs','Documents','Accounting','Integration','Reporting'],channels:['Email','Excel','Carrier portal','Customs portal','Phone','Paper','Other external']},
+ depts:[
+  D('d1','Customer Service','','Anna Berg, CS Manager','45','Receive and enter bookings\nAnswer shipment status queries\nFirst contact for customer issues','Validated','2026-10-06'),
+  D('d2','Sales','','Marco Rossi, Sales Director','30','Win new customers\nNegotiate customer rate contracts','Interviewed','2026-10-08'),
+  D('d3','Tariff','','Pricing team lead','8','Maintain buy rates from carriers\nPublish standard sell tariffs','Interviewed','2026-10-09'),
+  D('d4','Documentation','','Head of Documentation','60','Shipping documents for all modes','Interviewed','2026-10-10'),
+  D('d4a','Sea Export','d4','Team lead, Sea Export','18','Carrier bookings\nShipping instructions to carriers','Validated','2026-10-13'),
+  D('d4b','Sea Import','d4','Team lead, Sea Import','15','Arrival notices\nPre-alerts from origin agents','Interviewed','2026-10-14'),
+  D('d4c','Air Export','d4','Team lead, Air Export','12','Air bookings and air waybills','Not started'),
+  D('d4d','Air Import','d4','Team lead, Air Import','10','Air arrivals and release','Not started'),
+  D('d5','Logistics (equipment control)','','Equipment controller','6','Container stock levels by depot\nMonitor container movements and returns','Scheduled','2026-10-27'),
+  D('d6','Demurrage','','Demurrage supervisor','5','Calculate demurrage and detention\nPursue late container returns','Scheduled','2026-10-28'),
+  D('d7','Delivery Order counter','','Counter supervisor','4','Check payment and release cargo\nIssue delivery orders','Interviewed','2026-10-15'),
+  D('d8','Invoice counter','','Counter supervisor','4','Collect payments over the counter\nPrint invoices on request','Interviewed','2026-10-15'),
+  D('d9','Bill of Lading counter','','Counter supervisor','4','Release original bills of lading\nCheck surrender and telex release','Not started'),
+  D('d10','Customs','','Rajesh Iyer, Customs Manager','25','Export and import declarations\nCustoms holds and inspections','Validated','2026-10-07'),
+  D('d11','Finance','','Lars Jørgensen, CFO','40','Accounting and financial control','Interviewed','2026-10-08'),
+  D('d11a','Accounts Receivable','d11','AR lead','12','Customer invoicing and credit control\nCash collection','Interviewed','2026-10-16'),
+  D('d11b','Accounts Payable','d11','AP lead','9','Carrier and supplier invoices\nCost accrual matching','Scheduled','2026-10-29'),
+  D('d11c','Disbursement','d11','Disbursement officer','3','Pay port and customs charges on behalf of customers\nRecover them on invoices','Not started'),
+  D('d12','Master data team','','Master data lead','6','Create and maintain organizations, locations and codes','Validated','2026-10-12')
+ ],
+ modules:[
+  M('m1','Master data','Organizations (partners)','One record per company, holding every role it plays: customer, shipper, consignee, carrier, agent, supplier.','Create and edit organizations\nAssign roles\nAddresses and contacts\nCredit terms and limits','Organization code, legal name, roles\nAddresses (pickup, delivery, billing)\nVAT/tax ID, EORI number\nCredit limit, payment terms','Master data team\nCredit control','~180,000 organizations; ~600 new per week','ERP – customer and supplier accounts – nightly file','Duplicate check is a manual name search','About 8% are duplicates of the same company under different codes\nEORI numbers missing for many shippers','Poor','Redesign','Validated'),
+  M('m2','Master data','Locations','Sea ports, airports and inland points used in bookings, rating and customs.','Sea ports and airports\nInland locations and depots\nRating zones','UN/LOCODE, IATA airport code\nLocation type, country, time zone','Master data team','~45,000 locations','UN/LOCODE list – manual yearly update','Operators add inland locations ad hoc','Inland locations created inconsistently, so rate lookups fail','Fair','Improve','Documented'),
+  M('m3','Master data','Countries and currencies','Country reference data and exchange rates.','Countries\nCurrencies\nDaily exchange rates','ISO country and currency codes\nExchange rate, rate date','Finance\nMaster data team','~250 countries','Bank – exchange rates – daily feed','','','Good','Retain','Documented'),
+  M('m4','Master data','Container and package types','Standard equipment and packaging codes.','Container types (20GP, 40HC, 40RF…)\nPackage types','ISO 6346 size-type code, tare weight\nPackage code','Master data team','~60 container types','','','','Good','Retain','Documented'),
+  M('m5','Master data','Commodities','Commodity and tariff codes, including dangerous goods.','Commodity list\nHS tariff codes\nDangerous goods data','HS code, description\nUN number, DG class','Master data team\nCustoms','~9,000 codes','Customs tariff – manual update','','HS code is optional at booking, so it is often missing at customs filing','Fair','Improve','Documented'),
+  M('m6','Rating','Standard tariff','Published sell rates by lane, mode and equipment.','Maintain sell rates\nUpload rates from Excel','Lane, mode, container type\nCharge code, amount, validity','Tariff','~250,000 rate lines','','Rates prepared in Excel, then uploaded','Uploads fail silently when the Excel format is wrong','Fair','Improve','Documented'),
+  M('m7','Rating','Customer contracts','Negotiated sell rates per customer.','Customer-specific rates\nContract validity and approval','Customer, lane, charge, amount, validity','Sales\nTariff','~6,000 active contracts','','Expired contracts tracked in a sales spreadsheet','Expired contracts are not flagged, so old rates are quoted','Poor','Redesign','Documented'),
+  M('m8','Rating','Vendor contracts (buy rates)','Carrier and supplier buy rates, including surcharges.','Carrier contract rates\nSurcharges (BAF, CAF, PSS)','Carrier, lane, container type, buy rate\nSurcharge, validity','Tariff','~40 carriers; weekly surcharge changes','Carriers – rate sheets – Excel by email','Each carrier sheet reformatted by hand','Weekly surcharge updates take about 2 analyst days','Fair','Redesign','Walkthrough done'),
+  M('m9','Forwarding','Booking','The customer\'s shipping request before cargo moves.','Create booking\nCarrier booking request\nBooking confirmation','Booking number, shipper, consignee\nOrigin, destination, dates, Incoterms\nCargo, weight, volume, containers','Customer Service\nSea Export','~25,000 per day globally','Carriers – booking messages – EDI or portal\nCustomers – requests – email','Customer requests re-keyed from email','Bookings arrive as PDF or Excel and are typed in again','Fair','Redesign','Validated'),
+  M('m10','Forwarding','Shipment and consolidation','The shipment record carrying cargo, documents and milestones to delivery.','Convert booking to shipment\nConsolidations\nMilestones','House and master B/L number\nContainer and seal numbers\nVessel, voyage, ETD, ETA','Documentation\nCustomer Service','~300,000 open shipments','Carriers – status events – EDI\nTrack-and-trace provider – API','Milestones updated by hand from emails','Customers phone for status because milestones are late','Fair','Improve','Documented'),
+  M('m11','Equipment','Equipment control','Container stock by depot and container movements.','Container inventory by depot\nGate-in and gate-out events\nEmpty repositioning','Container number, size-type, status, depot\nMovement date and type','Logistics (equipment control)','~70,000 containers tracked','Depots – gate events – EDI','Stock kept in a parallel spreadsheet','','Unknown','To be decided','Not started'),
+  M('m12','Customs','Export and import declarations','Customs filings for goods leaving and entering a country.','Export declarations\nImport declarations\nCustoms holds','Declaration type, HS code, value\nEORI, procedure code','Customs','~8,000 per day','Customs authorities – declarations – government gateway','Data re-keyed from the shipment','4% of filings rejected for missing or wrong data','Fair','Redesign','Validated'),
+  M('m13','Documents','Shipping documents and release','Bills of lading, air waybills and delivery orders.','Print house B/L and AWB\nTelex release and surrender\nDelivery orders','Document number, type, release status','Documentation\nBill of Lading counter\nDelivery Order counter','~12,000 documents per day','','Release status checked by phone with Finance','Cargo released before payment is confirmed','Fair','Improve','Walkthrough done'),
+  M('m14','Accounting','Billing and costs','Job costing, customer invoices and supplier cost accruals.','Revenue and cost lines per job\nCustomer invoices\nSupplier accruals','Charge code, amount, currency, tax\nInvoice number, due date','Accounts Receivable\nAccounts Payable\nInvoice counter','~20,000 invoices per day','Corporate ERP – invoices and payments – daily file','Extra charges tracked in Excel first','Storage and demurrage billed weeks late or missed','Fair','Improve','Documented'),
+  M('m15','Accounting','Disbursements','Payments made on behalf of customers and recovered on invoices.','Record disbursements\nRecover on customer invoice','Payee, amount, shipment, receipt','Disbursement','','','','','Unknown','To be decided','Not started')
+ ],
+ processes:[
+  {id:'p1',dept:'d4a',name:'Sea export FCL: booking to invoice',owner:'Head of Documentation',trigger:'Customer sends a booking request',end:'Customer invoice issued',volume:'~9,000 shipments per day',steps:[
+   ST('d1','Receive booking request','CS agent','x:Email','Booking request (PDF or Excel)','Email in shared mailbox',2,'No standard format'),
+   ST('d1','Check or create shipper and consignee','CS agent','m1','Party details','Organization records',4,'Duplicates created when the name search fails'),
+   ST('d1','Enter booking','CS agent','m9','Booking email','Booking record',12,'Every field typed in again'),
+   ST('d1','Apply customer rates','CS agent','m7','Lane, container type','Charges on booking',5,'Expired contracts not flagged'),
+   ST('d4a','Book space with the carrier','Export coordinator','x:Carrier portal','Booking details','Carrier booking request',8,'Re-keyed into each carrier\'s portal'),
+   ST('d4a','Record carrier confirmation','Export coordinator','m9','Confirmation email','Booking confirmed',3,'Manual update from email'),
+   ST('d10','File export declaration','Customs broker','m12','Commercial invoice, HS codes','Export declaration',15,'Rejected when HS code or EORI is missing'),
+   ST('d5','Track container gate-in and loading','Equipment controller','x:Excel','Depot and carrier emails','Container status',5,'Kept in a spreadsheet, not the shipment'),
+   ST('d9','Release house bill of lading','Counter clerk','m13','Payment status','Original B/L',6,'Payment checked by phone'),
+   ST('d6','Add detention charges','Demurrage clerk','x:Excel','Late container returns','Charge list',6,'Calculated outside the system'),
+   ST('d11a','Issue customer invoice','AR clerk','m14','Charges','Customer invoice',4,'Late when extra charges arrive after invoicing')]},
+  {id:'p2',dept:'d4b',name:'Sea import: arrival to delivery order',owner:'Team lead, Sea Import',trigger:'Pre-alert from the origin agent',end:'Delivery order issued to the consignee',volume:'~7,000 shipments per day',steps:[
+   ST('d4b','Receive pre-alert and documents','Import coordinator','x:Email','Pre-alert, B/L copy','Import file',4,'Documents arrive in many formats'),
+   ST('d4b','Create import shipment','Import coordinator','m10','Pre-alert','Shipment record',10,'Re-keyed from the origin\'s documents'),
+   ST('d4b','Send arrival notice','Import coordinator','m13','Vessel ETA','Arrival notice',3,''),
+   ST('d6','Calculate demurrage','Demurrage clerk','x:Excel','Free days, discharge date','Demurrage amount',8,'Tariff rules applied by hand'),
+   ST('d8','Collect payment','Counter clerk','m14','Invoice','Payment receipt',6,''),
+   ST('d7','Issue delivery order','Counter clerk','m13','Payment receipt, original B/L','Delivery order',5,'Payment confirmed by phone with Finance')]},
+  {id:'p3',dept:'d12',name:'New customer onboarding',owner:'Master data lead',trigger:'Sales wins a new customer',end:'Customer can be booked and invoiced',volume:'~600 new organizations per week',steps:[
+   ST('d2','Request new customer','Sales executive','x:Email','Customer details form','Request email',5,''),
+   ST('d12','Search for an existing record','Master data analyst','m1','Company name','Search result',3,'Name-only search misses spelling variants'),
+   ST('d11a','Run credit check','Credit controller','x:Other external','Credit agency report','Credit limit',30,'Done outside the system'),
+   ST('d12','Create organization and roles','Master data analyst','m1','Approved form','Organization record',10,''),
+   ST('d12','Add VAT and EORI numbers','Master data analyst','m1','Customer documents','Compliance fields',3,'Often skipped, causing customs rejections later')]},
+  {id:'p4',dept:'d3',name:'Weekly carrier rate update',owner:'Pricing team lead',trigger:'Carrier sends new rates or surcharges',end:'New buy and sell rates live',volume:'~40 carriers, weekly',steps:[
+   ST('d3','Receive carrier rate sheet','Pricing analyst','x:Email','Excel rate sheet','Email',2,''),
+   ST('d3','Reformat to upload template','Pricing analyst','x:Excel','Carrier rate sheet','Upload file',45,'Every carrier uses a different format'),
+   ST('d3','Upload buy rates','Pricing analyst','m8','Upload file','Vendor contract rates',10,'Errors fail silently'),
+   ST('d3','Update sell rates','Pricing analyst','m6','Buy rates plus margin','Standard tariff',20,'')]}
+ ]
+};
+const BLANK=()=>({config:JSON.parse(JSON.stringify(GENERIC)),depts:[],modules:[],processes:[]});
+const clone=o=>JSON.parse(JSON.stringify(o));
+const fresh=(d,isSample,tab='setup')=>({...clone(d),tab,selD:d.depts[0]?.id||null,selM:d.modules[0]?.id||null,selP:d.processes[0]?.id||null,isSample});
+let S=fresh(EXAMPLE,true,'coverage');
+try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&v.config&&Array.isArray(v.depts))S=v;}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const lines=s=>String(s||'').split('\n').map(x=>x.trim()).filter(Boolean);
+const uid=p=>p+Math.random().toString(36).slice(2,8);
+const modById=id=>S.modules.find(m=>m.id===id);
+const deptById=id=>S.depts.find(d=>d.id===id);
+const isOut=v=>String(v||'').startsWith('x:');
+const sysLabel=v=>!v?'Not set':isOut(v)?v.slice(2):(modById(v)?.name||'Unknown module');
+const deptLabel=id=>{const d=deptById(id);if(!d)return id?'Unknown department':'Not set';const p=deptById(d.parent);return p?`${p.name} › ${d.name}`:d.name;};
+const stIdx=(list,v)=>Math.max(0,list.indexOf(v));
+const stChip=(list,v)=>`<span class="st s${stIdx(list,v)}">${esc(v)}</span>`;
+const ordered=()=>{const top=S.depts.filter(d=>!d.parent||!deptById(d.parent));return top.flatMap(t=>[t,...S.depts.filter(c=>c.parent===t.id)]);};
+const stepDept=(p,s)=>s.dept||p.dept;
+const inDept=(d,id)=>id===d.id||deptById(id)?.parent===d.id;
+const allSteps=()=>S.processes.flatMap(p=>p.steps.map(s=>({p,s,dept:stepDept(p,s)})));
+const view=document.getElementById('view');
+
+/* ---------- coverage maths ---------- */
+function coverage(){
+  const deptDone=S.depts.filter(d=>stIdx(DEPT_ST,d.status)>=2),modDone=S.modules.filter(m=>stIdx(MOD_ST,m.status)>=2);
+  const steps=allSteps(),out=steps.filter(x=>isOut(x.s.module));
+  const touched=new Set([...steps.map(x=>x.dept),...S.processes.map(p=>p.dept)]);
+  const deptNoProc=S.depts.filter(d=>!touched.has(d.id)&&!S.depts.some(c=>c.parent===d.id));
+  const usedMods=new Set(steps.map(x=>x.s.module));
+  const modUnused=S.modules.filter(m=>!usedMods.has(m.id));
+  const pains=S.modules.reduce((n,m)=>n+lines(m.pains).length,0)+steps.filter(x=>x.s.pain.trim()).length;
+  const mins=steps.reduce((n,x)=>n+(+x.s.mins||0),0),outMins=out.reduce((n,x)=>n+(+x.s.mins||0),0);
+  return{deptDone,modDone,steps,out,deptNoProc,modUnused,pains,mins,outMins,
+    deptTodo:S.depts.filter(d=>stIdx(DEPT_ST,d.status)<2),modTodo:S.modules.filter(m=>stIdx(MOD_ST,m.status)<2)};
+}
+function renderStats(){
+  const c=coverage(),pct=(a,b)=>b?Math.round(a/b*100):0;
+  const t=(l,v,sub,p,alert)=>`<div class="stat${alert?' alert':''}"><span>${l}</span><b>${v}</b>${p!=null?`<div class="meter"><i style="width:${p}%"></i></div>`:''}<small>${sub}</small></div>`;
+  document.getElementById('stats').innerHTML=
+    t('Departments covered',`${c.deptDone.length}/${S.depts.length}`,'interviewed or validated',pct(c.deptDone.length,S.depts.length))+
+    t('Modules covered',`${c.modDone.length}/${S.modules.length}`,'documented or validated',pct(c.modDone.length,S.modules.length))+
+    t('Processes mapped',S.processes.length,`${c.steps.length} steps`)+
+    t('Outside the system',pct(c.out.length,c.steps.length)+'%',`${c.out.length} steps · ${pct(c.outMins,c.mins)}% of hands-on time`,null,pct(c.out.length,c.steps.length)>=30)+
+    t('Pain points',c.pains,'from modules and process steps',null,c.pains>0);
+  document.getElementById('sample-note').hidden=!S.isSample;
+}
+function tabs(){document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab===S.tab));}
+
+/* ---------- setup ---------- */
+function listEditor(kind,title,tip,items,count){
+  return `<div class="panel"><div class="view-h"><h2>${title}</h2></div><p class="note">${tip}</p>
+    <div class="chips">${items.map((a,i)=>`<span class="chip">${esc(a)} <span class="cnt">${count(a)}</span><button type="button" data-rm-${kind}="${i}" aria-label="Remove ${esc(a)}">✕</button></span>`).join('')||'<span class="note">None yet.</span>'}</div>
+    <div class="addrow"><input id="new-${kind}" placeholder="Add ${kind==='area'?'an area':'a channel'}" aria-label="New ${kind}"><button type="button" class="btn" data-add-${kind}>Add</button></div></div>`;
+}
+let pendingTemplate=null;
+function setupView(){
+  const c=S.config;
+  return `<div class="stack">
+  <div class="panel"><h2>Start from a template</h2>
+    <p class="note">The tool works for any domain. Pick a starting point, then add your own departments, modules and processes.</p>
+    <div class="tpl"><button type="button" data-tpl="example"><b>Freight forwarding example</b><span>19 departments, 15 modules, 4 processes, mapped to a CargoWise One–style system.</span></button>
+    <button type="button" data-tpl="blank"><b>Blank, any domain</b><span>Generic system areas and workaround channels. No departments or modules yet.</span></button></div>
+    ${pendingTemplate?`<div class="confirm"><span>This replaces everything you have entered.</span><button type="button" class="btn btn-primary" data-tpl-ok>Replace my analysis</button><button type="button" class="btn btn-ghost" data-tpl-cancel>Cancel</button></div>`:''}
+  </div>
+  ${listEditor('area','System areas','Groups for your system modules, such as Master data, Rating or Billing. The number shows how many modules use each area.',c.areas,a=>S.modules.filter(m=>m.area===a).length)}
+  ${listEditor('channel','Workaround channels','Ways people work outside the system. Process steps can be tagged with these instead of a module.',c.channels,a=>allSteps().filter(x=>x.s.module==='x:'+a).length)}
+  <div class="panel"><h2>Suggested order of work</h2><ol class="note" style="margin:0;padding-left:20px;display:grid;gap:4px">
+    <li>List every department and sub-unit from the organisation chart, and plan an interview with each.</li>
+    <li>List every module and screen group in the current system, using its menu as a checklist.</li>
+    <li>Map each department's main processes step by step, tagging the module or workaround used at each step.</li>
+    <li>Use Coverage to find the departments and modules you have not reached yet.</li></ol></div>
+  </div>`;
+}
+
+/* ---------- departments ---------- */
+function deptNav(){
+  return `<nav class="nav" aria-label="Departments"><div><h4>Departments</h4><ul>${ordered().map(d=>`<li><button type="button" class="item${d.parent&&deptById(d.parent)?' child':''}" data-sel-d="${d.id}" aria-current="${d.id===S.selD}"><span id="dlbl-${d.id}">${esc(d.name||'Untitled')}</span>${stChip(DEPT_ST,d.status)}</button></li>`).join('')||'<li class="note">No departments yet.</li>'}</ul></div>
+  <div class="add"><button type="button" class="btn btn-primary" id="add-d">Add department</button></div></nav>`;
+}
+function deptEditor(d){
+  if(!d)return'<div class="ed empty">Add your first department. Use the organisation chart as your checklist.</div>';
+  const parents=S.depts.filter(x=>x.id!==d.id&&!x.parent);
+  const hasKids=S.depts.some(c=>c.parent===d.id);
+  const own=S.processes.filter(p=>p.dept===d.id);
+  const steps=allSteps().filter(x=>x.dept===d.id);
+  const mods=[...new Set(steps.map(x=>x.s.module).filter(Boolean))];
+  const pains=steps.filter(x=>x.s.pain.trim());
+  return `<div class="ed">
+    <div class="view-h"><h2 id="d-title">${esc(deptLabel(d.id))}</h2>${stChip(DEPT_ST,d.status)}</div>
+    <div class="g2">
+      <div class="field"><label for="d-name">Department or unit name</label><input id="d-name" data-df="name" value="${esc(d.name)}"></div>
+      <div class="field"><label for="d-parent">Part of</label><select id="d-parent" data-df="parent"${hasKids?' disabled':''}><option value="">Top level</option>${parents.map(p=>`<option value="${p.id}"${p.id===d.parent?' selected':''}>${esc(p.name)}</option>`).join('')}</select>${hasKids?'<span class="tip">Has its own sub-units, so it stays top level.</span>':''}</div>
+    </div>
+    <div class="g4">
+      <div class="field"><label for="d-head">Head or contact</label><input id="d-head" data-df="head" value="${esc(d.head)}"></div>
+      <div class="field"><label for="d-headcount">Headcount</label><input id="d-headcount" data-df="headcount" value="${esc(d.headcount)}"></div>
+      <div class="field"><label for="d-status">Interview status</label><select id="d-status" data-df="status">${DEPT_ST.map(s=>`<option${s===d.status?' selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label for="d-date">Interview date</label><input id="d-date" type="date" data-df="date" value="${esc(d.date)}"></div>
+    </div>
+    <div class="field"><label for="d-responsibilities">Responsibilities</label><textarea id="d-responsibilities" data-df="responsibilities" rows="3">${esc(d.responsibilities)}</textarea><span class="tip">One per line. Each one should lead to a process you map.</span></div>
+    <div class="field"><label for="d-notes">Notes and open questions</label><textarea id="d-notes" data-df="notes" rows="2">${esc(d.notes)}</textarea></div>
+    <div class="derived">
+      <div><span class="lbl">Processes owned</span><br>${own.length?own.map(p=>esc(p.name)).join(' · '):'<span class="note">None yet</span>'}</div>
+      <div><span class="lbl">Steps performed</span><br><b>${steps.length}</b> steps in ${new Set(steps.map(x=>x.p.id)).size} processes · ${steps.reduce((n,x)=>n+(+x.s.mins||0),0)} min hands-on · ${steps.filter(x=>isOut(x.s.module)).length} outside the system</div>
+      <div><span class="lbl">Systems used</span><br>${mods.length?mods.map(m=>esc(sysLabel(m))).join(' · '):'<span class="note">None mapped yet</span>'}</div>
+      <div><span class="lbl">Pain points raised</span><br>${pains.length?pains.map(x=>esc(x.s.pain)).join(' · '):'<span class="note">None yet</span>'}</div>
+    </div>
+    <div class="row"><button type="button" class="btn btn-ghost" id="del-d">Delete department</button></div>
+  </div>`;
+}
+
+/* ---------- modules ---------- */
+function moduleNav(){
+  const groups=S.config.areas.map(a=>[a,S.modules.filter(m=>m.area===a)]).filter(g=>g[1].length);
+  const orphan=S.modules.filter(m=>!S.config.areas.includes(m.area));
+  if(orphan.length)groups.push(['No area',orphan]);
+  return `<nav class="nav" aria-label="Modules">${groups.length?groups.map(([a,ms])=>`<div><h4>${esc(a)}</h4><ul>${ms.map(m=>`<li><button type="button" class="item" data-sel-m="${m.id}" aria-current="${m.id===S.selM}"><span id="lbl-${m.id}">${esc(m.name||'Untitled module')}</span>${stChip(MOD_ST,m.status)}</button></li>`).join('')}</ul></div>`).join(''):'<p class="note">No modules yet.</p>'}
+    <div class="add"><label class="note" for="new-area-sel">Add a module to</label><select id="new-area-sel">${S.config.areas.map(a=>`<option>${esc(a)}</option>`).join('')}</select><button type="button" class="btn btn-primary" id="add-m"${S.config.areas.length?'':' disabled'}>Add module</button>${S.config.areas.length?'':'<span class="note">Add a system area in Setup first.</span>'}</div></nav>`;
+}
+function moduleEditor(m){
+  if(!m)return'<div class="ed empty">Add your first module. Use the current system\'s main menu as your checklist.</div>';
+  const ta=(f,label,tip,rows=3)=>`<div class="field"><label for="m-${f}">${label}</label><textarea id="m-${f}" data-mf="${f}" rows="${rows}">${esc(m[f])}</textarea>${tip?`<span class="tip">${tip}</span>`:''}</div>`;
+  const sel=(f,label,list)=>`<div class="field"><label for="m-${f}">${label}</label><select id="m-${f}" data-mf="${f}">${list.map(a=>`<option${a===m[f]?' selected':''}>${esc(a)}</option>`).join('')}</select></div>`;
+  const used=allSteps().filter(x=>x.s.module===m.id);
+  return `<div class="ed">
+    <div class="view-h"><h2 id="m-title">${esc(m.name||'Untitled module')}</h2>${stChip(MOD_ST,m.status)}</div>
+    <div class="g3">
+      <div class="field"><label for="m-name">Module name</label><input id="m-name" data-mf="name" value="${esc(m.name)}"></div>
+      ${sel('area','System area',S.config.areas.includes(m.area)?S.config.areas:[m.area,...S.config.areas])}
+      ${sel('status','Review status',MOD_ST)}
+    </div>
+    ${ta('purpose','Purpose','What business job does this module do?',2)}
+    <div class="g2">${ta('functions','Key functions and screens','One per line')}${ta('entities','Key data and critical fields','One per line: the data a new system must hold')}</div>
+    <div class="g2">${ta('users','Users and departments','One per line')}${ta('integrations','Interfaces','One per line: system – data – method (EDI, API, file, manual)')}</div>
+    <div class="g2">${ta('custom','Customisations and workarounds','Spreadsheets, manual checks, local add-ons')}${ta('pains','Pain points','One per line, with evidence where you have it')}</div>
+    <div class="g3">
+      <div class="field"><label for="m-volume">Volumes</label><input id="m-volume" data-mf="volume" value="${esc(m.volume)}"></div>
+      ${sel('dq','Data quality',DQ)}${sel('assess','Initial assessment',ASSESS)}
+    </div>
+    ${ta('notes','Notes and open questions','',2)}
+    <div class="derived"><div><span class="lbl">Used in mapped processes</span><br>${used.length?[...new Set(used.map(x=>x.p.name))].map(esc).join(' · ')+` (${used.length} steps, by ${[...new Set(used.map(x=>deptLabel(x.dept)))].map(esc).join(', ')})`:'<span class="note">No mapped step uses this module yet.</span>'}</div></div>
+    <div class="row"><button type="button" class="btn btn-ghost" id="del-m">Delete module</button></div>
+  </div>`;
+}
+
+/* ---------- processes ---------- */
+function procNav(){
+  return `<nav class="nav" aria-label="Processes"><div><h4>Processes</h4><ul>${S.processes.map(p=>`<li><button type="button" class="item" data-sel-p="${p.id}" aria-current="${p.id===S.selP}"><span id="plbl-${p.id}">${esc(p.name||'Untitled process')}</span><span class="note">${p.steps.length}</span></button></li>`).join('')||'<li class="note">No processes yet.</li>'}</ul></div>
+    <div class="add"><button type="button" class="btn btn-primary" id="add-p">Add process</button></div></nav>`;
+}
+const deptOptions=(v,blank)=>`<option value="">${blank}</option>`+ordered().map(d=>`<option value="${d.id}"${d.id===v?' selected':''}>${esc(deptLabel(d.id))}</option>`).join('');
+function sysOptions(v){
+  const g=S.config.areas.map(a=>[a,S.modules.filter(m=>m.area===a)]).filter(x=>x[1].length);
+  const chans=[...S.config.channels];if(isOut(v)&&!chans.includes(v.slice(2)))chans.push(v.slice(2));
+  return `<option value=""${!v?' selected':''}>Choose…</option>`+g.map(([a,ms])=>`<optgroup label="${esc(a)}">${ms.map(m=>`<option value="${m.id}"${m.id===v?' selected':''}>${esc(m.name)}</option>`).join('')}</optgroup>`).join('')+
+    `<optgroup label="Outside the system">${chans.map(o=>`<option value="x:${esc(o)}"${'x:'+o===v?' selected':''}>${esc(o)}</option>`).join('')}</optgroup>`;
+}
+function procSummary(p){
+  const mins=p.steps.reduce((n,s)=>n+(+s.mins||0),0),out=p.steps.filter(s=>isOut(s.module)),om=out.reduce((n,s)=>n+(+s.mins||0),0);
+  const depts=[...new Set(p.steps.map(s=>stepDept(p,s)).filter(Boolean))];
+  return `<span>Steps <b>${p.steps.length}</b></span><span>Hands-on time <b>${mins} min</b></span><span>Outside the system <b>${out.length} steps · ${mins?Math.round(om/mins*100):0}% of time</b></span><span>Departments involved <b>${depts.length}</b></span><span>Hand-offs <b>${p.steps.reduce((n,s,i)=>n+(i&&stepDept(p,s)!==stepDept(p,p.steps[i-1])?1:0),0)}</b></span>`;
+}
+function procEditor(p){
+  if(!p)return'<div class="ed empty">Add a process and map it step by step.</div>';
+  return `<div class="ed">
+    <div class="view-h"><h2 id="p-title">${esc(p.name||'Untitled process')}</h2></div>
+    <div class="g3">
+      <div class="field"><label for="p-name">Process name</label><input id="p-name" data-pf="name" value="${esc(p.name)}"></div>
+      <div class="field"><label for="p-dept">Owning department</label><select id="p-dept" data-pf="dept">${deptOptions(p.dept,'Not set')}</select></div>
+      <div class="field"><label for="p-owner">Process owner</label><input id="p-owner" data-pf="owner" value="${esc(p.owner)}"></div>
+      <div class="field"><label for="p-trigger">Starts when</label><input id="p-trigger" data-pf="trigger" value="${esc(p.trigger)}"></div>
+      <div class="field"><label for="p-end">Ends when</label><input id="p-end" data-pf="end" value="${esc(p.end)}"></div>
+      <div class="field"><label for="p-volume">Volume and frequency</label><input id="p-volume" data-pf="volume" value="${esc(p.volume)}"></div>
+    </div>
+    <div class="sum" id="p-sum">${procSummary(p)}</div>
+    <div class="scroll"><table class="steps"><thead><tr><th>#</th><th>Step</th><th>Department</th><th>Role</th><th>System or workaround</th><th>Input</th><th>Output</th><th>Min</th><th>Pain point</th><th></th></tr></thead><tbody>
+    ${p.steps.map((s,i)=>`<tr class="${isOut(s.module)?'out':''}" id="row-${i}"><td class="n">${i+1}</td>
+      <td><input class="w-step" id="s${i}-step" data-i="${i}" data-sf="step" value="${esc(s.step)}" aria-label="Step ${i+1}"></td>
+      <td><select id="s${i}-dept" data-i="${i}" data-sf="dept" aria-label="Department for step ${i+1}">${deptOptions(s.dept,'Same as owner')}</select></td>
+      <td><input class="w-mid" id="s${i}-actor" data-i="${i}" data-sf="actor" value="${esc(s.actor)}" aria-label="Role for step ${i+1}"></td>
+      <td><select id="s${i}-module" data-i="${i}" data-sf="module" aria-label="System for step ${i+1}">${sysOptions(s.module)}</select></td>
+      <td><input class="w-mid" id="s${i}-input" data-i="${i}" data-sf="input" value="${esc(s.input)}" aria-label="Input to step ${i+1}"></td>
+      <td><input class="w-mid" id="s${i}-output" data-i="${i}" data-sf="output" value="${esc(s.output)}" aria-label="Output of step ${i+1}"></td>
+      <td><input class="w-min num" type="number" min="0" id="s${i}-mins" data-i="${i}" data-sf="mins" value="${esc(s.mins)}" aria-label="Minutes for step ${i+1}"></td>
+      <td><input class="w-mid" id="s${i}-pain" data-i="${i}" data-sf="pain" value="${esc(s.pain)}" aria-label="Pain point at step ${i+1}"></td>
+      <td><div class="mv"><button type="button" class="btn btn-ghost" data-up="${i}" aria-label="Move step ${i+1} up">↑</button><button type="button" class="btn btn-ghost" data-down="${i}" aria-label="Move step ${i+1} down">↓</button><button type="button" class="btn btn-ghost" data-rm="${i}" aria-label="Delete step ${i+1}">✕</button></div></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="row spread"><div class="row"><button type="button" class="btn btn-primary" id="add-s">Add step</button><span class="note">Steps done outside the system are marked with an amber edge.</span></div><button type="button" class="btn btn-ghost" id="del-p">Delete process</button></div>
+  </div>`;
+}
+
+/* ---------- coverage ---------- */
+function painRegister(){
+  const r=[];
+  S.modules.forEach(m=>lines(m.pains).forEach(p=>r.push({src:'Module',where:`${m.area} › ${m.name}`,dept:'',pain:p,sys:m.name})));
+  S.processes.forEach(pr=>pr.steps.forEach((s,i)=>{if(s.pain.trim())r.push({src:'Process',where:`${pr.name} › ${i+1}. ${s.step}`,dept:deptLabel(stepDept(pr,s)),pain:s.pain,sys:sysLabel(s.module)});}));
+  return r;
+}
+function matrix(rowsDef,rowSteps,rowLabel,rowClass){
+  const steps=allSteps(),usedIds=new Set(steps.map(x=>x.s.module));
+  const areas=S.config.areas.map(a=>[a,S.modules.filter(m=>m.area===a&&usedIds.has(m.id))]).filter(x=>x[1].length);
+  const outCols=[...new Set(steps.filter(x=>isOut(x.s.module)).map(x=>x.s.module.slice(2)))];
+  const cols=areas.flatMap(([,ms])=>ms);
+  if(!rowsDef.length||(!cols.length&&!outCols.length))return'<p class="empty">Map process steps to see this matrix.</p>';
+  return `<div class="scroll"><table class="mx"><thead><tr><th rowspan="2"></th>${areas.map(([a,ms])=>`<th class="grp" colspan="${ms.length}">${esc(a)}</th>`).join('')}${outCols.length?`<th class="grp" colspan="${outCols.length}">Outside the system</th>`:''}</tr>
+    <tr>${cols.map(m=>`<th class="v">${esc(m.name)}</th>`).join('')}${outCols.map(o=>`<th class="v">${esc(o)}</th>`).join('')}</tr></thead><tbody>
+    ${rowsDef.map(r=>{const st=rowSteps(r);return `<tr class="${st.length?'':'blank'}"><td class="pn ${rowClass?rowClass(r):''}">${esc(rowLabel(r))}</td>${cols.map(m=>{const n=st.filter(x=>x.s.module===m.id).length;return`<td class="c${n?' on':''}">${n||''}</td>`;}).join('')}${outCols.map(o=>{const n=st.filter(x=>x.s.module==='x:'+o).length;return`<td class="c${n?' out':''}">${n||''}</td>`;}).join('')}</tr>`;}).join('')}
+  </tbody></table></div>`;
+}
+function coverageView(){
+  const c=coverage(),reg=painRegister();
+  const gap=(title,items,fmt,tip,okText)=>`<div class="gap"><h3>${title}<span class="cnt${items.length?'':' ok'}">${items.length?items.length+' open':'Complete'}</span></h3>${items.length?`<ul>${items.map(fmt).join('')}</ul><p>${tip}</p>`:`<p>${okText}</p>`}</div>`;
+  return `<div class="stack">
+  <div class="panel"><div class="view-h"><h2>Coverage gaps</h2><span class="note">What still needs a conversation or a walkthrough.</span></div>
+   <div class="gaps">
+    ${gap('Departments not yet interviewed',c.deptTodo,d=>`<li>${esc(deptLabel(d.id))} ${stChip(DEPT_ST,d.status)}${d.date?` <span class="note">${esc(d.date)}</span>`:''}</li>`,'Schedule these before the As-Is is signed off.','Every department has been interviewed.')}
+    ${gap('Modules not yet documented',c.modTodo,m=>`<li>${esc(m.name)} ${stChip(MOD_ST,m.status)}</li>`,'Book a system walkthrough with a key user of each.','Every module has been documented.')}
+    ${gap('Departments with no mapped process',c.deptNoProc,d=>`<li>${esc(deptLabel(d.id))}</li>`,'Their work is not in any process map yet. Map their main processes from their responsibilities.','Every department appears in at least one process.')}
+    ${gap('Modules no mapped process uses',c.modUnused,m=>`<li>${esc(m.name)} <span class="note">${esc(m.area)}</span></li>`,'Either a process is still unmapped, or the module is used indirectly (master data) or not at all. Confirm with its users.','Every module is used in a mapped process.')}
+   </div></div>
+  <div class="panel"><div class="view-h"><h2>Department × module matrix</h2><span class="note">Steps each department performs in each module or workaround. A department's row includes its sub-units. Red rows have no mapped steps.</span></div>
+   ${matrix(ordered(),d=>allSteps().filter(x=>inDept(d,x.dept)),d=>d.name,d=>d.parent&&deptById(d.parent)?'child':'')}</div>
+  <div class="panel"><div class="view-h"><h2>Process × module matrix</h2></div>
+   ${matrix(S.processes,p=>allSteps().filter(x=>x.p.id===p.id),p=>p.name)}</div>
+  <div class="panel"><div class="view-h"><h2>Pain point register</h2><span class="note">${reg.length} pain points. Carry these IDs into the To-Be design and the traceability matrix.</span></div>
+   ${reg.length?`<div class="scroll"><table><thead><tr><th>ID</th><th>Source</th><th>Where</th><th>Department</th><th>Pain point</th><th>System</th></tr></thead><tbody>${reg.map((x,i)=>`<tr><td class="num">PP-${String(i+1).padStart(2,'0')}</td><td>${x.src}</td><td>${esc(x.where)}</td><td>${esc(x.dept)}</td><td>${esc(x.pain)}</td><td>${esc(x.sys)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">No pain points recorded yet.</p>'}</div>
+  </div>`;
+}
+
+function render(){
+  tabs();renderStats();
+  if(S.tab==='setup')view.innerHTML=setupView();
+  else if(S.tab==='depts'){const d=deptById(S.selD)||ordered()[0];S.selD=d?.id||null;view.innerHTML=`<div class="split">${deptNav()}${deptEditor(d)}</div>`;}
+  else if(S.tab==='modules'){const m=modById(S.selM)||S.modules[0];S.selM=m?.id||null;view.innerHTML=`<div class="split">${moduleNav()}${moduleEditor(m)}</div>`;}
+  else if(S.tab==='processes'){const p=S.processes.find(x=>x.id===S.selP)||S.processes[0];S.selP=p?.id||null;view.innerHTML=`<div class="split">${procNav()}${procEditor(p)}</div>`;}
+  else view.innerHTML=coverageView();
+  save();
+}
+const curM=()=>modById(S.selM),curP=()=>S.processes.find(x=>x.id===S.selP),curD=()=>deptById(S.selD);
+const focus=id=>{const el=document.getElementById(id);if(el)el.focus();};
+
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{S.tab=b.dataset.tab;pendingTemplate=null;render();}));
+function addToList(kind){
+  const inp=document.getElementById('new-'+kind),v=inp.value.trim();if(!v)return;
+  const list=kind==='area'?S.config.areas:S.config.channels;
+  if(list.some(x=>x.toLowerCase()===v.toLowerCase())){toast(`"${v}" is already in the list`);return;}
+  list.push(v);S.isSample=false;render();focus('new-'+kind);
+}
+view.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='new-area'||e.target.id==='new-channel')){e.preventDefault();addToList(e.target.id.slice(4));}});
+view.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.tpl){pendingTemplate=t.dataset.tpl;render();return;}
+  if(t.hasAttribute('data-tpl-cancel')){pendingTemplate=null;render();return;}
+  if(t.hasAttribute('data-tpl-ok')){S=pendingTemplate==='example'?fresh(EXAMPLE,true,'setup'):fresh(BLANK(),false,'setup');pendingTemplate=null;render();toast('Template loaded');return;}
+  if(t.hasAttribute('data-add-area')){addToList('area');return;}
+  if(t.hasAttribute('data-add-channel')){addToList('channel');return;}
+  if(t.dataset.rmArea!=null){const a=S.config.areas[+t.dataset.rmArea];const n=S.modules.filter(m=>m.area===a).length;
+    if(n){toast(`Move or delete the ${n} module${n>1?'s':''} in "${a}" first`);return;}S.config.areas.splice(+t.dataset.rmArea,1);render();return;}
+  if(t.dataset.rmChannel!=null){S.config.channels.splice(+t.dataset.rmChannel,1);render();return;}
+  if(t.dataset.selD){S.selD=t.dataset.selD;render();return;}
+  if(t.dataset.selM){S.selM=t.dataset.selM;render();return;}
+  if(t.dataset.selP){S.selP=t.dataset.selP;render();return;}
+  if(t.id==='add-d'){const d=D(uid('d'),'','','','','','Not started');S.depts.push(d);S.selD=d.id;S.isSample=false;render();focus('d-name');return;}
+  if(t.id==='del-d'){const id=S.selD;S.depts.forEach(c=>{if(c.parent===id)c.parent='';});S.depts=S.depts.filter(d=>d.id!==id);
+    S.processes.forEach(p=>{if(p.dept===id)p.dept='';p.steps.forEach(s=>{if(s.dept===id)s.dept='';});});S.selD=ordered()[0]?.id;render();toast('Department deleted');return;}
+  if(t.id==='add-m'){const m=M(uid('m'),document.getElementById('new-area-sel').value,'','','','','','','','','','Unknown','To be decided','Not started');S.modules.push(m);S.selM=m.id;S.isSample=false;render();focus('m-name');return;}
+  if(t.id==='del-m'){S.processes.forEach(p=>p.steps.forEach(s=>{if(s.module===S.selM)s.module='';}));S.modules=S.modules.filter(m=>m.id!==S.selM);S.selM=S.modules[0]?.id;render();toast('Module deleted');return;}
+  if(t.id==='add-p'){const p={id:uid('p'),dept:S.selD||'',name:'',owner:'',trigger:'',end:'',volume:'',steps:[ST('','','','','','','','')]};S.processes.push(p);S.selP=p.id;S.isSample=false;render();focus('p-name');return;}
+  if(t.id==='del-p'){S.processes=S.processes.filter(p=>p.id!==S.selP);S.selP=S.processes[0]?.id;render();toast('Process deleted');return;}
+  const p=curP();if(!p)return;
+  if(t.id==='add-s'){p.steps.push(ST('','','','','','','',''));render();focus(`s${p.steps.length-1}-step`);return;}
+  const sw=(i,j)=>{if(j<0||j>=p.steps.length)return;[p.steps[i],p.steps[j]]=[p.steps[j],p.steps[i]];render();};
+  if(t.dataset.up)sw(+t.dataset.up,+t.dataset.up-1);
+  else if(t.dataset.down)sw(+t.dataset.down,+t.dataset.down+1);
+  else if(t.dataset.rm){p.steps.splice(+t.dataset.rm,1);render();}
+});
+view.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.df){const d=curD();if(!d)return;d[t.dataset.df]=t.value;S.isSample=false;
+    if(t.dataset.df==='status'||t.dataset.df==='parent'){render();return;}
+    if(t.dataset.df==='name'){const l=document.getElementById('dlbl-'+d.id);if(l)l.textContent=d.name||'Untitled';document.getElementById('d-title').textContent=deptLabel(d.id);}
+    renderStats();save();return;}
+  if(t.dataset.mf){const m=curM();if(!m)return;m[t.dataset.mf]=t.value;S.isSample=false;
+    if(['area','status'].includes(t.dataset.mf)){render();return;}
+    if(t.dataset.mf==='name'){const l=document.getElementById('lbl-'+m.id);if(l)l.textContent=m.name||'Untitled module';document.getElementById('m-title').textContent=m.name||'Untitled module';}
+    renderStats();save();return;}
+  if(t.dataset.pf){const p=curP();if(!p)return;p[t.dataset.pf]=t.value;S.isSample=false;
+    if(t.dataset.pf==='name'){document.getElementById('plbl-'+p.id).textContent=p.name||'Untitled process';document.getElementById('p-title').textContent=p.name||'Untitled process';}
+    document.getElementById('p-sum').innerHTML=procSummary(p);renderStats();save();return;}
+  if(t.dataset.sf){const p=curP();if(!p)return;const s=p.steps[+t.dataset.i];s[t.dataset.sf]=t.value;S.isSample=false;
+    if(t.dataset.sf==='module')document.getElementById('row-'+t.dataset.i).classList.toggle('out',isOut(t.value));
+    document.getElementById('p-sum').innerHTML=procSummary(p);renderStats();save();}
+});
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2200);}
+function copy(text,msg){
+  const fb=()=>{const box=document.getElementById('fallback'),ta=document.getElementById('fallback-text');ta.value=text;box.hidden=false;ta.focus();ta.select();};
+  try{navigator.clipboard.writeText(text).then(()=>{toast(msg);document.getElementById('fallback').hidden=true;},fb);}catch(e){fb();}
+}
+const c=v=>String(v??'').replace(/\|/g,'/').replace(/\n/g,'<br>');
+function mdMatrix(rows,stepsOf,label){
+  const steps=allSteps(),used=S.modules.filter(m=>steps.some(x=>x.s.module===m.id));
+  return `| | ${used.map(m=>c(m.name)).join(' | ')} | Outside system |\n|---|${used.map(()=>'---|').join('')}---|\n`+
+    rows.map(r=>{const st=stepsOf(r);return `| ${c(label(r))} | ${used.map(m=>st.filter(x=>x.s.module===m.id).length||'').join(' | ')} | ${st.filter(x=>isOut(x.s.module)).length||''} |`;}).join('\n')+'\n';
+}
+function markdown(){
+  const cv=coverage(),ul=v=>lines(v).map(x=>`- ${x}`).join('\n')||'- _Not documented_';
+  let t=`# As-Is analysis\n\nDepartments covered: ${cv.deptDone.length} of ${S.depts.length} · Modules covered: ${cv.modDone.length} of ${S.modules.length} · Processes: ${S.processes.length} (${cv.steps.length} steps, ${cv.out.length} outside the system) · Pain points: ${cv.pains}\n`;
+  t+=`\n## 1. Organisation and coverage\n\n| Department | Head or contact | Headcount | Responsibilities | Interview status | Date |\n|---|---|---|---|---|---|\n`;
+  t+=ordered().map(d=>`| ${c(deptLabel(d.id))} | ${c(d.head)} | ${c(d.headcount)} | ${c(lines(d.responsibilities).join('; '))} | ${d.status} | ${c(d.date)} |`).join('\n')+'\n';
+  t+=`\n## 2. System landscape\n\n| Area | Module | Purpose | Review status | Data quality | Assessment |\n|---|---|---|---|---|---|\n`;
+  S.modules.forEach(m=>{t+=`| ${c(m.area)} | ${c(m.name)} | ${c(m.purpose)} | ${m.status} | ${m.dq} | ${m.assess} |\n`;});
+  t+=`\n## 3. Module details\n`;
+  S.modules.forEach(m=>{t+=`\n### ${m.name} (${m.area})\n\n${m.purpose||''}\n\n**Key functions**\n\n${ul(m.functions)}\n\n**Key data and critical fields**\n\n${ul(m.entities)}\n\n**Users and departments**\n\n${ul(m.users)}\n\n**Interfaces**\n\n${ul(m.integrations)}\n\n**Customisations and workarounds**\n\n${ul(m.custom)}\n\n**Pain points**\n\n${ul(m.pains)}\n\nVolumes: ${m.volume||'not documented'} · Data quality: ${m.dq} · Assessment: ${m.assess} · Review: ${m.status}\n`;if(m.notes.trim())t+=`\nNotes: ${m.notes.trim()}\n`;});
+  t+=`\n## 4. Operational processes\n`;
+  S.processes.forEach(p=>{const mins=p.steps.reduce((n,x)=>n+(+x.mins||0),0);
+    t+=`\n### ${p.name}\n\nOwning department: ${deptLabel(p.dept)} · Owner: ${p.owner||'–'} · Starts: ${p.trigger||'–'} · Ends: ${p.end||'–'} · Volume: ${p.volume||'–'} · Hands-on time: ${mins} min\n\n| # | Step | Department | Role | System or workaround | Input | Output | Min | Pain point |\n|---|---|---|---|---|---|---|---|---|\n`;
+    t+=p.steps.map((x,i)=>`| ${i+1} | ${c(x.step)} | ${c(deptLabel(stepDept(p,x)))} | ${c(x.actor)} | ${c(sysLabel(x.module))}${isOut(x.module)?' (outside system)':''} | ${c(x.input)} | ${c(x.output)} | ${x.mins||''} | ${c(x.pain)} |`).join('\n')+'\n';});
+  t+=`\n## 5. Department × module matrix\n\n`+mdMatrix(ordered(),d=>allSteps().filter(x=>inDept(d,x.dept)),d=>deptLabel(d.id));
+  t+=`\n## 6. Process × module matrix\n\n`+mdMatrix(S.processes,p=>allSteps().filter(x=>x.p.id===p.id),p=>p.name);
+  t+=`\n## 7. Coverage gaps\n\n**Departments not yet interviewed:** ${cv.deptTodo.map(d=>deptLabel(d.id)).join(', ')||'none'}\n\n**Modules not yet documented:** ${cv.modTodo.map(m=>m.name).join(', ')||'none'}\n\n**Departments with no mapped process:** ${cv.deptNoProc.map(d=>deptLabel(d.id)).join(', ')||'none'}\n\n**Modules no mapped process uses:** ${cv.modUnused.map(m=>m.name).join(', ')||'none'}\n`;
+  const reg=painRegister();
+  t+=`\n## 8. Pain point register\n\n| ID | Source | Where | Department | Pain point | System |\n|---|---|---|---|---|---|\n`+reg.map((x,i)=>`| PP-${String(i+1).padStart(2,'0')} | ${x.src} | ${c(x.where)} | ${c(x.dept)} | ${c(x.pain)} | ${c(x.sys)} |`).join('\n')+'\n';
+  return t;
+}
+document.getElementById('copy-md').addEventListener('click',()=>copy(markdown(),'Copied. Paste it into Confluence, Notion or a Claude Doc.'));
+document.getElementById('copy-csv').addEventListener('click',()=>{
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=[['Process','Owning department','Step no','Step','Department','Role','System or workaround','Outside system','Input','Output','Minutes','Pain point']];
+  S.processes.forEach(p=>p.steps.forEach((x,i)=>rows.push([p.name,deptLabel(p.dept),i+1,x.step,deptLabel(stepDept(p,x)),x.actor,sysLabel(x.module),isOut(x.module)?'Yes':'No',x.input,x.output,x.mins,x.pain])));
+  copy(rows.map(r=>r.map(q).join(',')).join('\n'),'Copied. Paste it into Excel or Google Sheets.');
+});
+render();
+</script>
+
+</body>
+</html>
